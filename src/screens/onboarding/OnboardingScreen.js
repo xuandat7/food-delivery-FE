@@ -9,7 +9,7 @@ import {
   Animated,
   FlatList
 } from 'react-native';
-import { COLORS, SIZES } from './styles';
+import { COLORS, SIZES } from '../../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 

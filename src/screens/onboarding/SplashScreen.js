@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { COLORS, SIZES } from './styles';
+import { COLORS, SIZES } from '../../constants/theme';
 
 const SplashScreen = ({ navigation }) => {
   // Animation values

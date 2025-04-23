@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import { COLORS, SIZES } from './styles';
+import { COLORS, SIZES } from '../../constants/theme';
 
 const HomeScreen = () => {
   return (

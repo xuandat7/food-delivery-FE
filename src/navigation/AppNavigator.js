@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
-import SplashScreen from './screens/SplashScreen';
-import OnboardingScreen from './screens/OnboardingScreen';
-import LoginScreen from './screens/LoginScreen';
-import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
-import SignUpScreen from './screens/SignUpScreen';
-import VerificationScreen from './screens/VerificationScreen';
-import NewPasswordScreen from './screens/NewPasswordScreen';
-import HomeScreen from './screens/HomeScreen';
 
-export default function App() {
+// Import screens
+import SplashScreen from '../screens/onboarding/SplashScreen';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import SignUpScreen from '../screens/auth/SignUpScreen';
+import VerificationScreen from '../screens/auth/VerificationScreen';
+import NewPasswordScreen from '../screens/auth/NewPasswordScreen';
+import HomeScreen from '../screens/home/HomeScreen';
+
+const AppNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
@@ -167,7 +169,7 @@ export default function App() {
   }
 
   if (showLogin) {
-  return (
+    return (
       <LoginScreen 
         onComplete={handleLoginComplete} 
         onForgotPassword={handleNavigateToForgotPassword}
@@ -177,6 +179,6 @@ export default function App() {
   }
 
   return <HomeScreen />;
-}
+};
 
-const styles = StyleSheet.create({});
+export default AppNavigator; 

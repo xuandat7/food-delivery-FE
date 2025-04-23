@@ -10,7 +10,7 @@ import {
   ScrollView,
   Alert
 } from 'react-native';
-import { COLORS, SIZES } from './styles';
+import { COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 const SignUpScreen = ({ onGoBack, onComplete }) => {

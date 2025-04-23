@@ -10,7 +10,7 @@ import {
   Alert,
   TextInput
 } from 'react-native';
-import { COLORS, SIZES } from './styles';
+import { COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 const VerificationScreen = ({ onGoBack, onComplete, email = "example@gmail.com", fromForgotPassword = false }) => {

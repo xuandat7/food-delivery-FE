@@ -10,10 +10,12 @@ import {
   FlatList
 } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-const OnboardingScreen = ({ onComplete }) => {
+const OnboardingScreen = () => {
+  const navigation = useNavigation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const fadeAnim = useState(new Animated.Value(1))[0];
   const flatListRef = useRef(null);
@@ -21,26 +23,26 @@ const OnboardingScreen = ({ onComplete }) => {
   const slides = [
     {
       id: '1',
-      title: 'All your favorites',
-      description: 'Get all your loved foods in one once place,\nyou just place the orer we do the rest',
+      title: 'Tất cả món ăn yêu thích',
+      description: 'Đặt tất cả các món ăn bạn yêu thích ở một nơi,\nbạn chỉ cần đặt hàng, chúng tôi sẽ lo phần còn lại',
       image: 'placeholder'
     },
     {
       id: '2',
-      title: 'Free delivery offers',
-      description: 'Free delivery for new customers via credit cards',
+      title: 'Ưu đãi giao hàng miễn phí',
+      description: 'Giao hàng miễn phí cho khách hàng mới qua thẻ tín dụng',
       image: 'placeholder'
     },
     {
       id: '3',
-      title: 'Quick Delivery',
-      description: 'Get your food delivered in less than 30 minutes',
+      title: 'Giao hàng nhanh chóng',
+      description: 'Nhận đồ ăn của bạn trong vòng chưa đầy 30 phút',
       image: 'placeholder'
     },
     {
       id: '4',
-      title: 'Easy Payment',
-      description: 'Pay for your food with credit card, Apple Pay, or cash',
+      title: 'Thanh toán dễ dàng',
+      description: 'Thanh toán đồ ăn bằng thẻ tín dụng, Apple Pay, hoặc tiền mặt',
       image: 'placeholder'
     }
   ];
@@ -53,13 +55,18 @@ const OnboardingScreen = ({ onComplete }) => {
       });
     } else {
       // We've reached the end of the slides
-      onComplete();
+      completeOnboarding();
     }
   };
 
   const handleSkip = () => {
     // Skip onboarding
-    onComplete();
+    completeOnboarding();
+  };
+
+  const completeOnboarding = () => {
+    // Navigate to Auth stack instead of using onComplete callback
+    navigation.navigate('Auth');
   };
 
   const renderItem = ({ item, index }) => {
@@ -126,13 +133,13 @@ const OnboardingScreen = ({ onComplete }) => {
       {/* Next Button */}
       <TouchableOpacity style={styles.button} onPress={handleNext}>
         <View style={styles.buttonContent}>
-          <Text style={styles.buttonText}>NEXT</Text>
+          <Text style={styles.buttonText}>TIẾP THEO</Text>
         </View>
       </TouchableOpacity>
 
       {/* Skip Button */}
       <TouchableOpacity onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>Bỏ qua</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

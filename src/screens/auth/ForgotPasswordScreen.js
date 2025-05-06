@@ -9,117 +9,181 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
+  Alert,
+  Dimensions
 } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const ForgotPasswordScreen = ({ onGoBack, onComplete }) => {
-  const [email, setEmail] = useState('');
+const { height, width } = Dimensions.get('window');
+
+const ForgotPasswordScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const isRestaurant = route.params?.isRestaurant || false;
   
-  const handleSendCode = () => {
-    // Simple validation
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
+  
+  // Use the appropriate theme based on isRestaurant param
+  const theme = isRestaurant ? RESTAURANT_COLORS : COLORS;
+
+  // Validate email
+  const validateEmail = (text) => {
+    setEmail(text);
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!text.trim()) {
+      setEmailError('Email là bắt buộc');
+    } else if (!emailRegex.test(text)) {
+      setEmailError('Vui lòng nhập địa chỉ email hợp lệ');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  // Handle submit
+  const handleSubmit = () => {
     if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email');
+      setEmailError('Email là bắt buộc');
       return;
     }
     
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      setEmailError('Vui lòng nhập địa chỉ email hợp lệ');
       return;
     }
     
-    // In a real app, you would send a code to the email
+    // In a real app, you would call API to send reset email
+    console.log('Reset password for email:', email);
+    
+    // Show a confirmation and proceed to verification screen
     Alert.alert(
-      'Code Sent',
-      `A verification code has been sent to ${email}`,
+      "Thành Công",
+      "Mã xác nhận đã được gửi đến email của bạn",
       [
         { 
           text: 'OK', 
           onPress: () => {
-            // Navigate to verification screen or complete flow
-            if (onComplete) onComplete(email);
-          } 
+            // Navigate to verification screen
+            navigation.navigate('Verification', { 
+              email, 
+              isRestaurant,
+              fromForgotPassword: true 
+            });
+          }
         }
       ]
     );
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Background elements */}
-        <View style={styles.backgroundContainer}>
-          <View style={styles.circle} />
-          <View style={styles.rightLine} />
-        </View>
-        
-        {/* Back button */}
-        <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.loginBackground} />
-        </TouchableOpacity>
-        
-        {/* Top section */}
-        <View style={styles.topSection}>
-          <Text style={styles.title}>Forgot Password</Text>
-          <Text style={styles.subtitle}>Please sign in to your existing account</Text>
-        </View>
-        
-        {/* White background container */}
-        <View style={styles.whiteContainer}>
-          {/* Email input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>EMAIL</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="example@gmail.com"
-                placeholderTextColor={COLORS.placeholderText}
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-              />
+    <View style={{ flex: 1 }}>
+      {/* Background color extends full screen */}
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: theme.loginBackground 
+      }} />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+        >
+          {/* Content container */}
+          <View style={{ flex: 1 }}>
+            {/* Background elements */}
+            <View style={styles.backgroundContainer}>
+              <View style={[styles.circle, { borderColor: theme.loginDarkElements }]} />
+              <View style={[styles.rightLine, { borderColor: theme.loginDarkElements }]} />
+            </View>
+            
+            {/* Back button */}
+            <TouchableOpacity style={[styles.backButton, { backgroundColor: theme.background }]} onPress={() => navigation.goBack()}>
+              <Ionicons name="chevron-back" size={24} color={theme.loginBackground} />
+            </TouchableOpacity>
+            
+            {/* Top section */}
+            <View style={styles.topSection}>
+              <Text style={[styles.title, { color: theme.background }]}>
+                {isRestaurant ? 'Quên Mật Khẩu Nhà Hàng?' : 'Quên Mật Khẩu?'}
+              </Text>
+              <Text style={styles.subtitle}>
+                Nhập email của bạn và chúng tôi sẽ gửi bạn một liên kết để đặt lại mật khẩu
+              </Text>
+            </View>
+            
+            {/* White background container that extends to bottom of screen */}
+            <View style={[
+              styles.whiteContainer, 
+              { 
+                backgroundColor: theme.background,
+                minHeight: height - 220, // Adjust based on top section height
+              }
+            ]}>
+              <ScrollView 
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 100 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Email input */}
+                <View style={styles.inputSection}>
+                  <Text style={[styles.inputLabel, { color: theme.text }]}>EMAIL</Text>
+                  <View style={[styles.inputContainer, {
+                    borderColor: emailError ? 'red' : theme.inputBorder,
+                    backgroundColor: theme.inputBackground
+                  }]}>
+                    <TextInput
+                      style={[styles.input, { color: theme.text, letterSpacing: email ? 0 : -0.5 }]}
+                      placeholder="example@gmail.com"
+                      placeholderTextColor={theme.placeholderText}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={email}
+                      onChangeText={validateEmail}
+                    />
+                  </View>
+                  {emailError ? (
+                    <Text style={styles.errorText}>{emailError}</Text>
+                  ) : null}
+                </View>
+                
+                {/* Submit button */}
+                <TouchableOpacity 
+                  style={[styles.submitButton, { backgroundColor: theme.primaryButton }]} 
+                  onPress={handleSubmit}
+                >
+                  <Text style={[styles.submitButtonText, { color: theme.background }]}>GỬI LIÊN KẾT ĐẶT LẠI</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
           </View>
-          
-          {/* Send Code button */}
-          <TouchableOpacity style={styles.sendCodeButton} onPress={handleSendCode}>
-            <Text style={styles.sendCodeText}>SEND CODE</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.loginBackground,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
   backgroundContainer: {
     position: 'absolute',
     width: '100%',
     height: 450,
+    zIndex: 0,
   },
   circle: {
     width: 271,
     height: 271,
     borderRadius: 135.5,
     borderWidth: 5,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderStyle: 'dashed',
     position: 'absolute',
     top: -47,
@@ -133,7 +197,6 @@ const styles = StyleSheet.create({
     height: 356,
     backgroundColor: 'transparent',
     borderLeftWidth: 1,
-    borderColor: COLORS.loginDarkElements,
   },
   backButton: {
     position: 'absolute',
@@ -142,72 +205,70 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   topSection: {
     marginTop: 120,
-    marginBottom: 40,
+    marginBottom: 20,
     paddingHorizontal: SIZES.padding,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1,
   },
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: COLORS.background,
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: SIZES.large,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
     lineHeight: 26,
   },
   whiteContainer: {
-    backgroundColor: COLORS.background,
     borderTopLeftRadius: SIZES.cardBorderRadius,
     borderTopRightRadius: SIZES.cardBorderRadius,
     paddingHorizontal: 24,
     paddingTop: 30,
-    paddingBottom: 50,
     flex: 1,
-    minHeight: 580,
+    zIndex: 2,
   },
-  inputGroup: {
-    marginBottom: 40,
+  inputSection: {
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: SIZES.small,
-    color: COLORS.text,
+    fontWeight: '500',
     marginBottom: 8,
   },
   inputContainer: {
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
+    borderRadius: SIZES.buttonRadius,
+    borderWidth: 1,
+    paddingHorizontal: 20,
     justifyContent: 'center',
-    backgroundColor: COLORS.inputBackground,
   },
   input: {
-    paddingHorizontal: 19,
+    height: SIZES.inputHeight,
     fontSize: SIZES.medium,
-    color: COLORS.text,
-    height: '100%',
   },
-  sendCodeButton: {
-    backgroundColor: COLORS.primaryButton,
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 5,
+  },
+  submitButton: {
     borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
+    marginTop: 20,
   },
-  sendCodeText: {
-    color: COLORS.background,
+  submitButtonText: {
     fontSize: SIZES.medium,
     fontWeight: '700',
   },

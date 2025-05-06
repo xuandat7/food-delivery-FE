@@ -12,10 +12,18 @@ import {
   ScrollView,
   Alert
 } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
+const LoginScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const isRestaurant = route.params?.isRestaurant || false;
+  
+  // Use the appropriate theme based on user type
+  const theme = isRestaurant ? RESTAURANT_COLORS : COLORS;
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -23,22 +31,26 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
-  const validateEmail = () => {
+  const validateEmail = (text) => {
+    setEmail(text);
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      setEmailError('Email is required');
+    if (!text.trim()) {
+      setEmailError('Email là bắt buộc');
       return false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('Invalid email format');
+    } else if (!emailRegex.test(text)) {
+      setEmailError('Định dạng email không hợp lệ');
       return false;
     }
     setEmailError('');
     return true;
   };
 
-  const validatePassword = () => {
-    if (!password) {
-      setPasswordError('Password is required');
+  const validatePassword = (text) => {
+    setPassword(text);
+    
+    if (!text.trim()) {
+      setPasswordError('Mật khẩu là bắt buộc');
       return false;
     }
     setPasswordError('');
@@ -46,29 +58,30 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
   };
 
   const handleLogin = () => {
-    const isEmailValid = validateEmail();
-    const isPasswordValid = validatePassword();
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
 
     if (isEmailValid && isPasswordValid) {
       // Perform login operation
-      onComplete();
+      navigation.navigate('Home');
     }
   };
   
   const handleForgotPassword = () => {
-    // Navigate to forgot password screen
-    if (onForgotPassword) {
-      onForgotPassword();
-    }
+    navigation.navigate('ForgotPassword', { isRestaurant });
   };
 
   const handleSocialLogin = (platform) => {
-    Alert.alert(`${platform} Login`, `${platform} login will be implemented soon`);
+    Alert.alert(`Đăng nhập ${platform}`, `Đăng nhập ${platform} sẽ được triển khai sớm`);
+  };
+
+  const handleSwitchUserType = () => {
+    navigation.navigate('Login', { isRestaurant: !isRestaurant });
   };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.loginBackground }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView 
@@ -77,48 +90,58 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
       >
         {/* Background elements */}
         <View style={styles.backgroundContainer}>
-          <View style={styles.circle} />
-          <View style={styles.rightLine} />
+          <View style={[styles.circle, { borderColor: theme.loginDarkElements }]} />
+          <View style={[styles.rightLine, { borderColor: theme.loginDarkElements }]} />
         </View>
         
         {/* Top section */}
         <View style={styles.topSection}>
-          <Text style={styles.title}>Log In</Text>
-          <Text style={styles.subtitle}>Please sign in to your existing account</Text>
+          <Text style={[styles.title, { color: theme.background }]}>
+            {isRestaurant ? 'Đăng Nhập Nhà Hàng' : 'Đăng Nhập'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isRestaurant 
+              ? 'Vui lòng đăng nhập vào tài khoản nhà hàng của bạn' 
+              : 'Vui lòng đăng nhập vào tài khoản của bạn'}
+          </Text>
         </View>
         
         {/* White background container */}
-        <View style={styles.whiteContainer}>
+        <View style={[styles.whiteContainer, { backgroundColor: theme.background }]}>
           {/* Email input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>EMAIL</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>EMAIL</Text>
+            <View style={[styles.inputContainer, { 
+              borderColor: emailError ? 'red' : theme.inputBorder,
+              backgroundColor: theme.inputBackground
+            }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, letterSpacing: email ? 0 : -0.5 }]}
                 placeholder="example@gmail.com"
-                placeholderTextColor={COLORS.placeholderText}
+                placeholderTextColor={theme.placeholderText}
                 keyboardType="email-address"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={validateEmail}
                 autoCapitalize="none"
-                onBlur={validateEmail}
               />
-              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
             </View>
+            {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           </View>
           
           {/* Password input */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>PASSWORD</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>MẬT KHẨU</Text>
+            <View style={[styles.inputContainer, {
+              borderColor: passwordError ? 'red' : theme.inputBorder,
+              backgroundColor: theme.inputBackground
+            }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, letterSpacing: password ? 0 : -0.5 }]}
                 placeholder="**********"
-                placeholderTextColor={COLORS.placeholderText}
+                placeholderTextColor={theme.placeholderText}
                 secureTextEntry={!showPassword}
                 value={password}
-                onChangeText={setPassword}
-                onBlur={validatePassword}
+                onChangeText={validatePassword}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -127,11 +150,11 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={22}
-                  color={COLORS.placeholderText}
+                  color={theme.placeholderText}
                 />
               </TouchableOpacity>
-              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
             </View>
+            {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
           </View>
           
           {/* Remember me and Forgot password */}
@@ -140,32 +163,35 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
               style={styles.rememberContainer}
               onPress={() => setRememberMe(!rememberMe)}
             >
-              <View style={styles.checkbox}>
-                {rememberMe && <View style={styles.checkboxInner} />}
+              <View style={[styles.checkbox, { borderColor: theme.checkboxBorder }]}>
+                {rememberMe && <View style={[styles.checkboxInner, { backgroundColor: theme.primaryButton }]} />}
               </View>
-              <Text style={styles.rememberText}>Remember me</Text>
+              <Text style={[styles.rememberText, { color: theme.rememberMeText }]}>Ghi nhớ đăng nhập</Text>
             </TouchableOpacity>
             
             <TouchableOpacity onPress={handleForgotPassword}>
-              <Text style={styles.forgotText}>Forgot Password</Text>
+              <Text style={[styles.forgotText, { color: theme.primaryButton }]}>Quên Mật Khẩu</Text>
             </TouchableOpacity>
           </View>
           
           {/* Login button */}
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>LOG IN</Text>
+          <TouchableOpacity 
+            style={[styles.loginButton, { backgroundColor: theme.primaryButton }]} 
+            onPress={handleLogin}
+          >
+            <Text style={[styles.loginButtonText, { color: theme.background }]}>ĐĂNG NHẬP</Text>
           </TouchableOpacity>
           
           {/* Don't have account */}
           <View style={styles.noAccountContainer}>
-            <Text style={styles.noAccountText}>Don't have an account?</Text>
-            <TouchableOpacity onPress={onSignUp}>
-              <Text style={styles.signUpText}>SIGN UP</Text>
+            <Text style={[styles.noAccountText, { color: theme.textSecondary }]}>Chưa có tài khoản?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('SignUp', { isRestaurant })}>
+              <Text style={[styles.signUpText, { color: theme.primaryButton }]}>ĐĂNG KÝ</Text>
             </TouchableOpacity>
           </View>
           
           {/* Or */}
-          <Text style={styles.orText}>Or</Text>
+          <Text style={[styles.orText, { color: theme.textSecondary }]}>Hoặc</Text>
           
           {/* Social login */}
           <View style={styles.socialContainer}>
@@ -187,6 +213,18 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
               </View>
             </TouchableOpacity>
           </View>
+          
+          {/* Switch to other user type */}
+          <TouchableOpacity 
+            style={styles.switchUserType} 
+            onPress={handleSwitchUserType}
+          >
+            <Text style={[styles.switchText, { color: theme.primaryButton }]}>
+              {isRestaurant 
+                ? 'Đăng nhập với tư cách Khách hàng' 
+                : 'Đăng nhập với tư cách Nhà hàng'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -196,7 +234,6 @@ const LoginScreen = ({ onComplete, onForgotPassword, onSignUp }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.loginBackground,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -211,7 +248,6 @@ const styles = StyleSheet.create({
     height: 271,
     borderRadius: 135.5,
     borderWidth: 5,
-    borderColor: COLORS.loginDarkElements,
     borderStyle: 'dashed',
     position: 'absolute',
     top: -47,
@@ -225,7 +261,6 @@ const styles = StyleSheet.create({
     height: 356,
     backgroundColor: 'transparent',
     borderLeftWidth: 1,
-    borderColor: COLORS.loginDarkElements,
   },
   topSection: {
     marginTop: 120,
@@ -237,7 +272,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: COLORS.background,
     marginBottom: 10,
   },
   subtitle: {
@@ -247,7 +281,6 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   whiteContainer: {
-    backgroundColor: COLORS.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
@@ -261,21 +294,17 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: SIZES.small,
-    color: COLORS.text,
     marginBottom: 8,
   },
   inputContainer: {
     borderWidth: 1,
-    borderColor: COLORS.inputBorder,
     borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
     justifyContent: 'center',
-    backgroundColor: COLORS.inputBackground,
   },
   input: {
-    paddingHorizontal: 19,
+    paddingHorizontal: 20,
     fontSize: SIZES.medium,
-    color: COLORS.text,
     height: '100%',
   },
   eyeIcon: {
@@ -297,7 +326,6 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderWidth: 1,
-    borderColor: COLORS.checkboxBorder,
     borderRadius: 4,
     marginRight: 10,
     justifyContent: 'center',
@@ -306,29 +334,32 @@ const styles = StyleSheet.create({
   checkboxInner: {
     width: 12,
     height: 12,
-    backgroundColor: COLORS.primaryButton,
     borderRadius: 2,
   },
   rememberText: {
     fontSize: SIZES.small,
-    color: COLORS.rememberMeText,
   },
   forgotText: {
     fontSize: SIZES.medium,
-    color: COLORS.primaryButton,
   },
   loginButton: {
-    backgroundColor: COLORS.primaryButton,
     borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 16,
   },
   loginButtonText: {
-    color: COLORS.background,
     fontSize: SIZES.medium,
     fontWeight: '700',
+  },
+  switchUserType: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  switchText: {
+    fontSize: SIZES.medium,
+    fontWeight: '500',
   },
   noAccountContainer: {
     flexDirection: 'row',
@@ -338,18 +369,15 @@ const styles = StyleSheet.create({
   },
   noAccountText: {
     fontSize: SIZES.large,
-    color: COLORS.textSecondary,
     marginRight: 5,
   },
   signUpText: {
     fontSize: SIZES.medium,
     fontWeight: '700',
-    color: COLORS.primaryButton,
   },
   orText: {
     textAlign: 'center',
     fontSize: SIZES.large,
-    color: COLORS.textSecondary,
     marginBottom: 15,
   },
   socialContainer: {
@@ -380,7 +408,7 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 14,
     marginTop: 5,
-  },
+  }
 });
 
 export default LoginScreen; 

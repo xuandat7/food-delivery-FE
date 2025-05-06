@@ -8,16 +8,31 @@ import {
   Platform,
   ScrollView,
   Alert,
-  TextInput
+  TextInput,
+  Dimensions,
+  SafeAreaView
 } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const VerificationScreen = ({ onGoBack, onComplete, email = "example@gmail.com", fromForgotPassword = false }) => {
+const { height, width } = Dimensions.get('window');
+
+const VerificationScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  
+  const email = route.params?.email || "example@gmail.com";
+  const fromForgotPassword = route.params?.fromForgotPassword || false;
+  const isRestaurant = route.params?.isRestaurant || false;
+  
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timeLeft, setTimeLeft] = useState(50);
   const [isResendActive, setIsResendActive] = useState(false);
   const inputRefs = useRef([]);
+  
+  // Use the appropriate theme based on isRestaurant prop
+  const theme = isRestaurant ? RESTAURANT_COLORS : COLORS;
 
   // Timer for resend code
   useEffect(() => {
@@ -49,7 +64,7 @@ const VerificationScreen = ({ onGoBack, onComplete, email = "example@gmail.com",
 
   // Handle keyboard backspace
   const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && index > 0 && otp[index] === '') {
+    if (e.nativeEvent && e.nativeEvent.key === 'Backspace' && index > 0 && otp[index] === '') {
       inputRefs.current[index - 1].focus();
     }
   };
@@ -58,7 +73,7 @@ const VerificationScreen = ({ onGoBack, onComplete, email = "example@gmail.com",
   const handleVerify = () => {
     const otpValue = otp.join('');
     if (otpValue.length !== 6) {
-      Alert.alert('Error', 'Please enter the complete verification code');
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ mã xác nhận');
       return;
     }
     
@@ -67,16 +82,20 @@ const VerificationScreen = ({ onGoBack, onComplete, email = "example@gmail.com",
     
     // Show success message
     Alert.alert(
-      "Verification Successful",
+      "Xác Minh Thành Công",
       fromForgotPassword 
-        ? "You can now reset your password."
-        : "Your account has been verified successfully.",
+        ? "Bạn có thể đặt lại mật khẩu của mình."
+        : "Tài khoản của bạn đã được xác minh thành công.",
       [
         { 
           text: 'OK', 
           onPress: () => {
             // Navigate to next screen on success
-            if (onComplete) onComplete(fromForgotPassword);
+            if (fromForgotPassword) {
+              navigation.navigate('NewPassword', { email, isRestaurant });
+            } else {
+              navigation.navigate('Login');
+            }
           } 
         }
       ]
@@ -95,111 +114,130 @@ const VerificationScreen = ({ onGoBack, onComplete, email = "example@gmail.com",
       setOtp(['', '', '', '', '', '']);
       
       // Show message
-      Alert.alert('Success', 'A new verification code has been sent');
+      Alert.alert('Thành Công', 'Mã xác nhận mới đã được gửi');
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.loginBackground }}>
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+    <View style={{ flex: 1 }}>
+      {/* Background color extends full screen */}
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: theme.loginBackground 
+      }} />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
         >
-          {/* Background elements */}
-          <View style={styles.backgroundContainer}>
-            <View style={styles.circle} />
-            <View style={styles.rightLine} />
-          </View>
-          
-          {/* Back button */}
-          <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
-            <Ionicons name="chevron-back" size={24} color={COLORS.loginBackground} />
-          </TouchableOpacity>
-          
-          {/* Top section */}
-          <View style={styles.topSection}>
-            <Text style={styles.title}>Verification</Text>
-            <Text style={styles.subtitle}>We have sent a code to your email</Text>
-            <Text style={styles.email}>{email}</Text>
-          </View>
-          
-          {/* White background container */}
-          <View style={styles.whiteContainer}>
-            {/* OTP Input section */}
-            <View style={styles.otpSection}>
-              <View style={styles.otpLabelRow}>
-                <Text style={styles.otpLabel}>CODE</Text>
-                <TouchableOpacity 
-                  onPress={handleResend}
-                  disabled={!isResendActive}
-                >
-                  <Text style={[
-                    styles.resendText,
-                    {color: isResendActive ? COLORS.primaryButton : COLORS.textSecondary}
-                  ]}>
-                    Resend {!isResendActive ? `in.${timeLeft}sec` : ''}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* OTP Input Fields */}
-              <View style={styles.otpInputContainer}>
-                {otp.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={ref => inputRefs.current[index] = ref}
-                    style={styles.otpInput}
-                    value={digit}
-                    onChangeText={(value) => handleOtpChange(value, index)}
-                    keyboardType="numeric"
-                    maxLength={1}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                    selectTextOnFocus
-                  />
-                ))}
-              </View>
+          {/* Content container */}
+          <View style={{ flex: 1 }}>
+            {/* Background elements */}
+            <View style={styles.backgroundContainer}>
+              <View style={[styles.circle, { borderColor: theme.loginDarkElements }]} />
+              <View style={[styles.rightLine, { borderColor: theme.loginDarkElements }]} />
             </View>
             
-            {/* Verify button */}
-            <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
-              <Text style={styles.verifyButtonText}>VERIFY</Text>
+            {/* Back button */}
+            <TouchableOpacity style={[styles.backButton, { backgroundColor: theme.background }]} onPress={() => navigation.goBack()}>
+              <Ionicons name="chevron-back" size={24} color={theme.loginBackground} />
             </TouchableOpacity>
             
-            {/* Add bottom padding for better appearance */}
-            <View style={styles.bottomPadding} />
+            {/* Top section */}
+            <View style={styles.topSection}>
+              <Text style={[styles.title, { color: theme.background }]}>
+                {isRestaurant ? 'Xác Minh Nhà Hàng' : 'Xác Minh'}
+              </Text>
+              <Text style={styles.subtitle}>Chúng tôi đã gửi một mã đến email của bạn</Text>
+              <Text style={[styles.email, { color: theme.background }]}>{email}</Text>
+            </View>
+            
+            {/* White background container that extends to bottom of screen */}
+            <View style={[
+              styles.whiteContainer, 
+              { 
+                backgroundColor: theme.background,
+                minHeight: height - 240, // Adjust based on top section height
+              }
+            ]}>
+              <ScrollView 
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 80 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* OTP Input section */}
+                <View style={styles.otpSection}>
+                  <View style={styles.otpLabelRow}>
+                    <Text style={[styles.otpLabel, { color: theme.text }]}>MÃ XÁC NHẬN</Text>
+                    <TouchableOpacity 
+                      onPress={handleResend}
+                      disabled={!isResendActive}
+                    >
+                      <Text style={[
+                        styles.resendText,
+                        {color: isResendActive ? theme.primaryButton : theme.textSecondary}
+                      ]}>
+                        Gửi lại {!isResendActive ? `sau ${timeLeft}s` : ''}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* OTP Input Fields */}
+                  <View style={styles.otpInputContainer}>
+                    {otp.map((digit, index) => (
+                      <TextInput
+                        key={index}
+                        ref={ref => inputRefs.current[index] = ref}
+                        style={[styles.otpInput, {
+                          backgroundColor: theme.inputBackground,
+                          borderColor: theme.inputBorder,
+                          color: theme.text
+                        }]}
+                        keyboardType="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChangeText={(value) => handleOtpChange(value, index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                      />
+                    ))}
+                  </View>
+                </View>
+                
+                {/* Verify Button */}
+                <TouchableOpacity 
+                  style={[styles.verifyButton, { backgroundColor: theme.primaryButton }]} 
+                  onPress={handleVerify}
+                >
+                  <Text style={[styles.verifyButtonText, { color: theme.background }]}>XÁC MINH</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.loginBackground,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: 20,
-  },
   backgroundContainer: {
     position: 'absolute',
     width: '100%',
     height: 450,
+    zIndex: 0,
   },
   circle: {
     width: 271,
     height: 271,
     borderRadius: 135.5,
     borderWidth: 5,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderStyle: 'dashed',
     position: 'absolute',
     top: -47,
@@ -213,7 +251,6 @@ const styles = StyleSheet.create({
     height: 356,
     backgroundColor: 'transparent',
     borderLeftWidth: 1,
-    borderColor: COLORS.loginDarkElements,
   },
   backButton: {
     position: 'absolute',
@@ -222,7 +259,6 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -233,12 +269,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.padding,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1,
   },
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: COLORS.background,
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: SIZES.large,
@@ -249,17 +286,15 @@ const styles = StyleSheet.create({
   email: {
     fontSize: SIZES.large,
     fontWeight: 'bold',
-    color: COLORS.background,
     marginTop: 5,
   },
   whiteContainer: {
-    backgroundColor: COLORS.background,
     borderTopLeftRadius: SIZES.cardBorderRadius,
     borderTopRightRadius: SIZES.cardBorderRadius,
     paddingHorizontal: 24,
     paddingTop: 30,
-    paddingBottom: 20,
     flex: 1,
+    zIndex: 2,
   },
   otpSection: {
     marginBottom: 30,
@@ -272,7 +307,6 @@ const styles = StyleSheet.create({
   },
   otpLabel: {
     fontSize: SIZES.small,
-    color: COLORS.text,
     fontWeight: '400',
   },
   resendText: {
@@ -288,16 +322,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 62,
     borderRadius: 12,
-    backgroundColor: '#f9f9f9',
     borderWidth: 1,
-    borderColor: '#f0f0f0',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.text,
   },
   verifyButton: {
-    backgroundColor: COLORS.primaryButton,
     borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
     justifyContent: 'center',
@@ -305,13 +335,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   verifyButtonText: {
-    color: COLORS.background,
     fontSize: SIZES.medium,
     fontWeight: '700',
   },
-  bottomPadding: {
-    height: 100,
-  }
 });
 
 export default VerificationScreen; 

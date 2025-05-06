@@ -9,41 +9,108 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
+  Alert,
+  Dimensions
 } from 'react-native';
-import { COLORS, SIZES } from '../../constants/theme';
+import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const NewPasswordScreen = ({ onGoBack, onComplete, email }) => {
+const { height, width } = Dimensions.get('window');
+
+const NewPasswordScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  
+  const email = route.params?.email || "example@gmail.com";
+  const isRestaurant = route.params?.isRestaurant || false;
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   
+  // Use the appropriate theme based on isRestaurant prop
+  const theme = isRestaurant ? RESTAURANT_COLORS : COLORS;
+
+  // Toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // Toggle confirm password visibility
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  // Validate password
+  const validatePassword = (value) => {
+    setPassword(value);
+    
+    if (value.length < 8) {
+      setPasswordError('Mật khẩu phải có ít nhất 8 ký tự');
+    } else if (!/[A-Z]/.test(value)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một chữ cái viết hoa');
+    } else if (!/[a-z]/.test(value)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một chữ cái viết thường');
+    } else if (!/[0-9]/.test(value)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một chữ số');
+    } else if (!/[!@#$%^&*]/.test(value)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một ký tự đặc biệt (!@#$%^&*)');
+    } else {
+      setPasswordError('');
+    }
+    
+    // Also check if confirm password matches
+    if (confirmPassword && value !== confirmPassword) {
+      setConfirmPasswordError('Mật khẩu không khớp');
+    } else if (confirmPassword) {
+      setConfirmPasswordError('');
+    }
+  };
+
+  // Validate confirm password
+  const validateConfirmPassword = (value) => {
+    setConfirmPassword(value);
+    
+    if (value !== password) {
+      setConfirmPasswordError('Mật khẩu không khớp');
+    } else {
+      setConfirmPasswordError('');
+    }
+  };
+
+  // Handle reset password
   const handleResetPassword = () => {
-    // Simple validation
-    if (!password.trim()) {
-      Alert.alert('Error', 'Please enter your new password');
+    // Validate all fields
+    if (!password) {
+      setPasswordError('Mật khẩu là bắt buộc');
       return;
     }
     
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    if (!confirmPassword) {
+      setConfirmPasswordError('Vui lòng xác nhận mật khẩu của bạn');
       return;
     }
     
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+    if (passwordError || confirmPasswordError) {
       return;
     }
     
-    // In a real app, you would call an API to update the password
+    // In a real app, you would call API to reset password
+    console.log('Resetting password:', password);
+    
+    // Show success message
     Alert.alert(
-      'Success',
-      'Your password has been reset successfully',
+      "Thành Công",
+      "Mật khẩu của bạn đã được đặt lại thành công.",
       [
         { 
           text: 'OK', 
           onPress: () => {
-            if (onComplete) onComplete();
+            navigation.navigate('Login', { isRestaurant });
           } 
         }
       ]
@@ -51,93 +118,191 @@ const NewPasswordScreen = ({ onGoBack, onComplete, email }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Background elements */}
-        <View style={styles.backgroundContainer}>
-          <View style={styles.circle} />
-          <View style={styles.rightLine} />
-        </View>
-        
-        {/* Back button */}
-        <TouchableOpacity style={styles.backButton} onPress={onGoBack}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.loginBackground} />
-        </TouchableOpacity>
-        
-        {/* Top section */}
-        <View style={styles.topSection}>
-          <Text style={styles.title}>Reset Password</Text>
-          <Text style={styles.subtitle}>Create a new password for</Text>
-          <Text style={styles.email}>{email}</Text>
-        </View>
-        
-        {/* White background container */}
-        <View style={styles.whiteContainer}>
-          {/* Password input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>NEW PASSWORD</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter new password"
-                placeholderTextColor={COLORS.placeholderText}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
+    <View style={{ flex: 1 }}>
+      {/* Background color extends full screen */}
+      <View style={{ 
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: theme.loginBackground 
+      }} />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+        >
+          {/* Content container */}
+          <View style={{ flex: 1 }}>
+            {/* Background elements */}
+            <View style={styles.backgroundContainer}>
+              <View style={[styles.circle, { borderColor: theme.loginDarkElements }]} />
+              <View style={[styles.rightLine, { borderColor: theme.loginDarkElements }]} />
+            </View>
+            
+            {/* Back button */}
+            <TouchableOpacity style={[styles.backButton, { backgroundColor: theme.background }]} onPress={() => navigation.goBack()}>
+              <Ionicons name="chevron-back" size={24} color={theme.loginBackground} />
+            </TouchableOpacity>
+            
+            {/* Top section */}
+            <View style={styles.topSection}>
+              <Text style={[styles.title, { color: theme.background }]}>
+                {isRestaurant ? 'Đặt Lại Mật Khẩu Nhà Hàng' : 'Đặt Lại Mật Khẩu'}
+              </Text>
+              <Text style={styles.subtitle}>Tạo mật khẩu mới cho</Text>
+              <Text style={[styles.email, { color: theme.background }]}>{email}</Text>
+            </View>
+            
+            {/* White background container that extends to bottom of screen */}
+            <View style={[
+              styles.whiteContainer, 
+              { 
+                backgroundColor: theme.background,
+                minHeight: height - 240, // Adjust based on top section height
+              }
+            ]}>
+              <ScrollView 
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 80 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Password section */}
+                <View style={styles.inputSection}>
+                  <Text style={[styles.inputLabel, { color: theme.text }]}>MẬT KHẨU MỚI</Text>
+                  
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={[
+                        styles.input, 
+                        { 
+                          borderColor: passwordError ? theme.error : theme.inputBorder,
+                          backgroundColor: theme.inputBackground,
+                          color: theme.text
+                        }
+                      ]}
+                      value={password}
+                      onChangeText={validatePassword}
+                      secureTextEntry={!showPassword}
+                      placeholder="Nhập mật khẩu mới"
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                    <TouchableOpacity 
+                      style={styles.eyeButton} 
+                      onPress={togglePasswordVisibility}
+                    >
+                      <Ionicons 
+                        name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                        size={22} 
+                        color={theme.textSecondary} 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {passwordError ? (
+                    <Text style={[styles.errorText, { color: theme.error }]}>
+                      {passwordError}
+                    </Text>
+                  ) : null}
+                  
+                  <View style={styles.passwordRequirements}>
+                    <Text style={[styles.requirementText, { color: theme.textSecondary }]}>
+                      Mật khẩu phải có:
+                    </Text>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItem, { color: theme.textSecondary }]}>
+                        Ít nhất 8 ký tự
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItem, { color: theme.textSecondary }]}>
+                        Chữ hoa và chữ thường
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItem, { color: theme.textSecondary }]}>
+                        Ít nhất một số và một ký tự đặc biệt
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                
+                {/* Confirm Password section */}
+                <View style={[styles.inputSection, { marginTop: 20 }]}>
+                  <Text style={[styles.inputLabel, { color: theme.text }]}>XÁC NHẬN MẬT KHẨU</Text>
+                  
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={[
+                        styles.input, 
+                        { 
+                          borderColor: confirmPasswordError ? theme.error : theme.inputBorder,
+                          backgroundColor: theme.inputBackground,
+                          color: theme.text
+                        }
+                      ]}
+                      value={confirmPassword}
+                      onChangeText={validateConfirmPassword}
+                      secureTextEntry={!showConfirmPassword}
+                      placeholder="Nhập lại mật khẩu mới"
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                    <TouchableOpacity 
+                      style={styles.eyeButton} 
+                      onPress={toggleConfirmPasswordVisibility}
+                    >
+                      <Ionicons 
+                        name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                        size={22} 
+                        color={theme.textSecondary} 
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {confirmPasswordError ? (
+                    <Text style={[styles.errorText, { color: theme.error }]}>
+                      {confirmPasswordError}
+                    </Text>
+                  ) : null}
+                </View>
+                
+                {/* Reset Password Button */}
+                <TouchableOpacity 
+                  style={[styles.resetButton, { backgroundColor: theme.primaryButton }]} 
+                  onPress={handleResetPassword}
+                >
+                  <Text style={[styles.resetButtonText, { color: theme.background }]}>
+                    ĐẶT LẠI MẬT KHẨU
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
           </View>
-          
-          {/* Confirm Password input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>CONFIRM PASSWORD</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm new password"
-                placeholderTextColor={COLORS.placeholderText}
-                secureTextEntry
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
-            </View>
-          </View>
-          
-          {/* Reset Password button */}
-          <TouchableOpacity style={styles.resetButton} onPress={handleResetPassword}>
-            <Text style={styles.resetButtonText}>RESET PASSWORD</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.loginBackground,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
   backgroundContainer: {
     position: 'absolute',
     width: '100%',
     height: 450,
+    zIndex: 0,
   },
   circle: {
     width: 271,
     height: 271,
     borderRadius: 135.5,
     borderWidth: 5,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
     borderStyle: 'dashed',
     position: 'absolute',
     top: -47,
@@ -151,7 +316,6 @@ const styles = StyleSheet.create({
     height: 356,
     backgroundColor: 'transparent',
     borderLeftWidth: 1,
-    borderColor: COLORS.loginDarkElements,
   },
   backButton: {
     position: 'absolute',
@@ -160,70 +324,97 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   topSection: {
     marginTop: 120,
-    marginBottom: 40,
+    marginBottom: 20,
     paddingHorizontal: SIZES.padding,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1,
   },
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: COLORS.background,
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: SIZES.large,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
     lineHeight: 26,
   },
   email: {
     fontSize: SIZES.large,
     fontWeight: 'bold',
-    color: COLORS.background,
     marginTop: 5,
   },
   whiteContainer: {
-    backgroundColor: COLORS.background,
     borderTopLeftRadius: SIZES.cardBorderRadius,
     borderTopRightRadius: SIZES.cardBorderRadius,
     paddingHorizontal: 24,
     paddingTop: 30,
-    paddingBottom: 50,
     flex: 1,
-    minHeight: 580,
+    zIndex: 2,
   },
-  inputGroup: {
+  inputSection: {
     marginBottom: 20,
   },
   inputLabel: {
     fontSize: SIZES.small,
-    color: COLORS.text,
+    fontWeight: '500',
     marginBottom: 8,
   },
-  inputContainer: {
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: SIZES.buttonRadius,
-    height: SIZES.inputHeight,
-    justifyContent: 'center',
-    backgroundColor: COLORS.inputBackground,
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
   },
   input: {
-    paddingHorizontal: 19,
+    flex: 1,
+    height: SIZES.inputHeight,
+    borderRadius: SIZES.inputRadius,
+    borderWidth: 1,
+    paddingHorizontal: 16,
     fontSize: SIZES.medium,
-    color: COLORS.text,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
     height: '100%',
+    justifyContent: 'center',
+  },
+  errorText: {
+    marginTop: 5,
+    fontSize: SIZES.small,
+  },
+  passwordRequirements: {
+    fontSize: 12,
+    color: 'rgba(0, 0, 0, 0.5)',
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  requirementText: {
+    fontSize: SIZES.small,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  bullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginRight: 8,
   },
   resetButton: {
-    backgroundColor: COLORS.primaryButton,
     borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
     justifyContent: 'center',
@@ -232,7 +423,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   resetButtonText: {
-    color: COLORS.background,
     fontSize: SIZES.medium,
     fontWeight: '700',
   },

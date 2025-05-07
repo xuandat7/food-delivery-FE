@@ -108,15 +108,13 @@ const SignUpScreen = () => {
     const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
     
     if (isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid) {
-      // In a real app, you would register the user/restaurant with your backend
+      // In a real app, you would register the user with your backend
       console.log('Sign up pressed with:', { name, email, password, isRestaurant });
       
       // Show success message
       Alert.alert(
         "Đăng Ký Thành Công",
-        isRestaurant
-          ? "Tài khoản nhà hàng của bạn đã được tạo thành công."
-          : "Tài khoản của bạn đã được tạo thành công.",
+        isRestaurant ? "Tài khoản nhà hàng của bạn đã được tạo thành công." : "Tài khoản của bạn đã được tạo thành công.",
         [
           { 
             text: 'OK', 
@@ -303,18 +301,6 @@ const SignUpScreen = () => {
                     <Text style={[styles.loginText, {color: theme.primaryButton}]}>ĐĂNG NHẬP</Text>
                   </TouchableOpacity>
                 </View>
-                
-                {/* Switch user type option */}
-                <TouchableOpacity 
-                  style={styles.switchUserType} 
-                  onPress={() => navigation.navigate('SignUp', { isRestaurant: !isRestaurant })}
-                >
-                  <Text style={[styles.switchText, {color: theme.primaryButton}]}>
-                    {isRestaurant 
-                      ? 'Đăng ký với tư cách Khách hàng' 
-                      : 'Đăng ký với tư cách Nhà hàng'}
-                  </Text>
-                </TouchableOpacity>
               </ScrollView>
             </View>
           </View>
@@ -444,16 +430,6 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     fontWeight: '700',
     marginLeft: 10,
-  },
-  switchUserType: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  switchText: {
-    fontSize: SIZES.medium,
-    fontWeight: '700',
   },
   errorText: {
     color: 'red',

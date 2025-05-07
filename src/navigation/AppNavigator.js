@@ -21,6 +21,7 @@ import HomeScreen from '../screens/home/HomeScreen';
 // Import chef screens
 import SellerDashboard from '../screens/chef/SellerDashboard';
 import RunningOrdersScreen from '../screens/chef/RunningOrdersScreen';
+import MyFoodScreen from '../screens/chef/MyFoodScreen';
 
 // Create stack navigators
 const Stack = createNativeStackNavigator();
@@ -55,6 +56,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="SellerDashboard" component={SellerDashboard} />
         <Stack.Screen name="RunningOrdersScreen" component={RunningOrdersScreen} />
+        <Stack.Screen name="MyFoodScreen" component={MyFoodScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

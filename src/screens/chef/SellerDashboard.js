@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,7 @@ import {
   TouchableOpacity, 
   StatusBar 
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
 import COLORS from '../../constants/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -56,8 +56,17 @@ const RevenueChart = () => {
 
 const SellerDashboard = () => {
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
   const [showRunningOrders, setShowRunningOrders] = useState(false);
   const [showOrderRequests, setShowOrderRequests] = useState(false);
+  const [activeTab, setActiveTab] = useState('home'); // Default active tab
+  
+  // Reset active tab when screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      setActiveTab('home');
+    }
+  }, [isFocused]);
   
   const handleToggleRunningOrders = () => {
     setShowRunningOrders(!showRunningOrders);
@@ -66,6 +75,11 @@ const SellerDashboard = () => {
   const handleToggleOrderRequests = () => {
     // Implement order requests modal when created
     console.log('Toggle order requests');
+  };
+  
+  const handleNavigateToMyFood = () => {
+    setActiveTab('menu');
+    navigation.navigate('MyFoodScreen');
   };
 
   return (
@@ -174,24 +188,55 @@ const SellerDashboard = () => {
       
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem}>
-          <MaterialCommunityIcons name="view-grid-outline" size={24} color="#32343E" />
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => setActiveTab('home')}
+        >
+          <MaterialCommunityIcons 
+            name="view-grid-outline" 
+            size={24} 
+            color={activeTab === 'home' ? '#FB6D3A' : '#32343E'} 
+          />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="menu" size={24} color="#32343E" />
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={handleNavigateToMyFood}
+        >
+          <Feather 
+            name="menu" 
+            size={24} 
+            color={activeTab === 'menu' ? '#FB6D3A' : '#32343E'} 
+          />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => setActiveTab('add')}
+        >
           <Feather name="plus" size={24} color="#FB6D3A" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="notifications-outline" size={24} color="#32343E" />
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => setActiveTab('notifications')}
+        >
+          <Ionicons 
+            name="notifications-outline" 
+            size={24} 
+            color={activeTab === 'notifications' ? '#FB6D3A' : '#32343E'} 
+          />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="user" size={24} color="#32343E" />
+        <TouchableOpacity 
+          style={styles.tabItem}
+          onPress={() => setActiveTab('profile')}
+        >
+          <Feather 
+            name="user" 
+            size={24} 
+            color={activeTab === 'profile' ? '#FB6D3A' : '#32343E'} 
+          />
         </TouchableOpacity>
       </View>
       

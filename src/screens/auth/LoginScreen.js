@@ -62,8 +62,12 @@ const LoginScreen = () => {
     const isPasswordValid = validatePassword(password);
 
     if (isEmailValid && isPasswordValid) {
-      // Perform login operation
-      navigation.navigate('Home');
+      // Navigate to different screens based on user type
+      if (isRestaurant) {
+        navigation.navigate('SellerDashboard');
+      } else {
+        navigation.navigate('Home');
+      }
     }
   };
   
@@ -411,4 +415,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default LoginScreen; 
+export default LoginScreen;

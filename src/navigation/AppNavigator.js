@@ -18,6 +18,10 @@ import AuthNavigator from '../screens/auth/AuthNavigator';
 // Import main screens
 import HomeScreen from '../screens/home/HomeScreen';
 
+// Import chef screens
+import SellerDashboard from '../screens/chef/SellerDashboard';
+import RunningOrdersScreen from '../screens/chef/RunningOrdersScreen';
+
 // Create stack navigators
 const Stack = createNativeStackNavigator();
 
@@ -49,9 +53,11 @@ const AppNavigator = () => {
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Auth" component={AuthNavigator} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="SellerDashboard" component={SellerDashboard} />
+        <Stack.Screen name="RunningOrdersScreen" component={RunningOrdersScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
 
-export default AppNavigator; 
+export default AppNavigator;

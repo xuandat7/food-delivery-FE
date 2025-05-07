@@ -1,269 +1,297 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
   View, 
-  Text, 
-  SafeAreaView, 
+  Text,
   FlatList, 
   TouchableOpacity, 
   StyleSheet,
+  StatusBar,
+  Dimensions,
   Image,
-  StatusBar
+  TouchableWithoutFeedback,
+  PanResponder,
+  Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import COLORS from '../../constants/colors';
 
-const OrderItem = ({ order, onAccept, onCancel }) => {
+const { width, height } = Dimensions.get('window');
+
+const OrderItem = ({ order }) => {
   return (
     <View style={styles.orderCard}>
       <View style={styles.orderImageContainer}>
-        <Image
-          source={order.image || require('../../../assets/favicon.png')} 
-          style={styles.orderImage}
-          resizeMode="cover"
-        />
+        {order.image ? (
+          <Image source={order.image} style={styles.orderImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.placeholderImage} />
+        )}
       </View>
-      <View style={styles.orderContent}>
-        <Text style={styles.orderTitle}>{order.name}</Text>
-        <Text style={styles.orderPrice}>${order.price}</Text>
-      </View>
-      <View style={styles.orderActions}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.acceptButton]}
-          onPress={() => onAccept(order.id)}
-        >
-          <Text style={styles.actionButtonText}>Accept</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.cancelButton]}
-          onPress={() => onCancel(order.id)}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+      <View style={styles.orderDetails}>
+        <Text style={styles.orderCategory}>#{order.category}</Text>
+        <Text style={styles.orderName}>{order.name}</Text>
+        <Text style={styles.orderId}>ID: {order.id}</Text>
+        <View style={styles.priceActionContainer}>
+          <Text style={styles.orderPrice}>${order.price}</Text>
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity style={styles.doneButton}>
+              <Text style={styles.doneText}>Done</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </View>
   );
 };
 
-const RunningOrdersScreen = () => {
+const RunningOrdersScreen = ({ visible, onClose }) => {
   const navigation = useNavigation();
   
-  // Sample data based on the image provided
+  // Setup animation values
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const isClosingRef = useRef(false);
+  
+  // Update animations when visibility changes
+  useEffect(() => {
+    if (visible) {
+      isClosingRef.current = false;
+      // Reset position
+      slideAnim.setValue(0);
+      // Fade in background
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true
+      }).start();
+    }
+  }, [visible, slideAnim, fadeAnim]);
+  
+  // Sample data for running orders
   const runningOrders = [
-    { id: '1', name: 'Chicken Burger', price: '20', image: null },
-    { id: '2', name: 'Chicken Wrap', price: '20', image: null },
-    { id: '3', name: 'Vegetarian Nachos', price: '15', image: null },
-    { id: '4', name: 'Tender Chicken Strips', price: '25', image: null },
-    { id: '5', name: 'Veggie Burrito', price: '15', image: null },
+    { id: '32053', name: 'Chicken Thai Biriyani', price: '60', category: 'Breakfast' },
+    { id: '15253', name: 'Chicken Bhuna', price: '30', category: 'Breakfast' },
+    { id: '21200', name: 'Vegetarian Poutine', price: '35', category: 'Breakfast' },
+    { id: '53241', name: 'Turkey Bacon Strips', price: '45', category: 'Breakfast' },
+    { id: '58464', name: 'Veggie Burrito', price: '25', category: 'Breakfast' },
   ];
   
-  const handleAccept = (orderId) => {
-    // Implement order acceptance logic here
-    console.log(`Order ${orderId} accepted`);
-  };
+  // Create a pan responder to handle swipe down gesture
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (evt, gestureState) => {
+        if (gestureState.dy > 0 && !isClosingRef.current) { // Only allow dragging down
+          slideAnim.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 50 && !isClosingRef.current) { // If dragged far enough, close the modal
+          handleClose();
+        } else if (!isClosingRef.current) {
+          // Otherwise, snap back to original position
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 10
+          }).start();
+        }
+      }
+    })
+  ).current;
   
-  const handleCancel = (orderId) => {
-    // Implement order cancellation logic here
-    console.log(`Order ${orderId} cancelled`);
-  };
-  
-  const handleBack = () => {
-    navigation.goBack();
+  const handleClose = () => {
+    if (onClose && !isClosingRef.current) {
+      isClosingRef.current = true;
+      
+      // Run animations in parallel
+      Animated.parallel([
+        // Slide down
+        Animated.timing(slideAnim, {
+          toValue: height,
+          duration: 250,
+          useNativeDriver: true
+        }),
+        // Fade out background
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true
+        })
+      ]).start(() => {
+        // Call onClose after animations complete
+        onClose();
+        // Reset animations for next time
+        slideAnim.setValue(0);
+      });
+    }
   };
 
+  if (!visible) return null;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#263E55" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="rgba(38, 62, 85, 0.7)" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>20 Running Orders</Text>
-        <View style={styles.headerRight} />
-      </View>
-      
-      {/* Orders List */}
-      <FlatList
-        data={runningOrders}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <OrderItem 
-            order={item} 
-            onAccept={handleAccept}
-            onCancel={handleCancel}
-          />
-        )}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
-      
-      {/* Bottom Tab */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem}>
-          <FontAwesome name="th-large" size={24} color="#32343E" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="menu" size={24} color="#32343E" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.addButton}>
-          <Feather name="plus" size={24} color="#FB6D3A" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="notifications-outline" size={24} color="#32343E" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="user" size={24} color="#32343E" />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      <TouchableWithoutFeedback onPress={handleClose}>
+        <Animated.View 
+          style={[
+            styles.modalOverlay,
+            { opacity: fadeAnim }
+          ]}
+        >
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+            <Animated.View 
+              style={[
+                styles.modalContent,
+                { transform: [{ translateY: slideAnim }] }
+              ]}
+            >
+              {/* Draggable handle at top of modal */}
+              <View 
+                {...panResponder.panHandlers} 
+                style={styles.dragHandleContainer}
+              >
+                <View style={styles.modalHandle} />
+              </View>
+              
+              {/* Title */}
+              <Text style={styles.title}>20 Running Orders</Text>
+              
+              {/* Orders List */}
+              <FlatList
+                data={runningOrders}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <OrderItem order={item} />}
+                contentContainerStyle={styles.listContainer}
+                showsVerticalScrollIndicator={false}
+              />
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </Animated.View>
+      </TouchableWithoutFeedback>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    ...StyleSheet.absoluteFillObject,
+    pointerEvents: 'box-none',
+  },
+  modalOverlay: {
     flex: 1,
-    backgroundColor: '#F6F7F8',
+    backgroundColor: 'rgba(38, 62, 85, 0.7)',
+    justifyContent: 'flex-end',
   },
-  header: {
-    backgroundColor: '#263E55',
-    paddingTop: 20,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    maxHeight: height * 0.85,
   },
-  backButton: {
-    width: 40,
-    height: 40,
+  dragHandleContainer: {
+    width: '100%', 
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+  },
+  title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  headerRight: {
-    width: 40,
-    height: 40,
+    color: '#32343E',
+    textAlign: 'center',
+    marginBottom: 24,
   },
   listContainer: {
-    padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
   orderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
     flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 20,
   },
   orderImageContainer: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 10,
-    overflow: 'hidden',
+    width: 75,
+    height: 75,
+    backgroundColor: '#C4C4C4',
+    borderRadius: 12,
+    marginRight: 14,
   },
-  orderImage: {
+  placeholderImage: {
     width: '100%',
     height: '100%',
   },
-  orderContent: {
+  orderDetails: {
     flex: 1,
-    marginLeft: 15,
+    justifyContent: 'space-between',
   },
-  orderTitle: {
-    fontSize: 16,
+  orderCategory: {
+    color: '#FF7A00',
+    fontSize: 14,
     fontWeight: '500',
+    marginBottom: 4,
+  },
+  orderName: {
     color: '#32343E',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  orderId: {
+    color: '#9B9BA5',
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  priceActionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   orderPrice: {
-    marginTop: 4,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#32343E',
   },
-  orderActions: {
-    flexDirection: 'column',
-    gap: 8,
+  actionsContainer: {
+    flexDirection: 'row',
   },
-  actionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  acceptButton: {
+  doneButton: {
     backgroundColor: '#FF7A00',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  doneText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
   cancelButton: {
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
   },
-  actionButtonText: {
-    color: '#FFFFFF',
+  cancelText: {
+    color: '#FF3B30',
     fontSize: 14,
     fontWeight: '500',
-  },
-  cancelButtonText: {
-    color: '#32343E',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  tabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 89,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    paddingBottom: 20, // For home indicator area on newer iPhones
-  },
-  tabItem: {
-    width: 25,
-    height: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButton: {
-    width: 57,
-    height: 57,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF1F1',
-    borderWidth: 1,
-    borderColor: '#FF7621',
-    borderRadius: 28.5,
-    marginBottom: 20,
   },
 });
 

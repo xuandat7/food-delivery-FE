@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -15,6 +15,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
+import RunningOrdersScreen from './RunningOrdersScreen';
 
 // Custom Chart Component (simplified for this implementation)
 const RevenueChart = () => {
@@ -55,14 +56,16 @@ const RevenueChart = () => {
 
 const SellerDashboard = () => {
   const navigation = useNavigation();
+  const [showRunningOrders, setShowRunningOrders] = useState(false);
+  const [showOrderRequests, setShowOrderRequests] = useState(false);
   
-  const handleNavigateToRunningOrders = () => {
-    navigation.navigate('RunningOrdersScreen');
+  const handleToggleRunningOrders = () => {
+    setShowRunningOrders(!showRunningOrders);
   };
   
-  const handleNavigateToOrderRequests = () => {
-    // Implement navigation to order requests screen when created
-    console.log('Navigate to order requests');
+  const handleToggleOrderRequests = () => {
+    // Implement order requests modal when created
+    console.log('Toggle order requests');
   };
 
   return (
@@ -91,7 +94,7 @@ const SellerDashboard = () => {
         <View style={styles.statsContainer}>
           <TouchableOpacity 
             style={styles.statsCard}
-            onPress={handleNavigateToRunningOrders}
+            onPress={handleToggleRunningOrders}
           >
             <Text style={styles.statsNumber}>20</Text>
             <Text style={styles.statsLabel}>RUNNING ORDERS</Text>
@@ -99,7 +102,7 @@ const SellerDashboard = () => {
           
           <TouchableOpacity 
             style={styles.statsCard}
-            onPress={handleNavigateToOrderRequests}
+            onPress={handleToggleOrderRequests}
           >
             <Text style={styles.statsNumber}>05</Text>
             <Text style={styles.statsLabel}>ORDER REQUEST</Text>
@@ -171,9 +174,8 @@ const SellerDashboard = () => {
       
       {/* Bottom Tab Bar */}
       <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => handleNavigateToRunningOrders()}>
+        <TouchableOpacity style={styles.tabItem}>
           <MaterialCommunityIcons name="view-grid-outline" size={24} color="#32343E" />
-          
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.tabItem}>
@@ -192,6 +194,12 @@ const SellerDashboard = () => {
           <Feather name="user" size={24} color="#32343E" />
         </TouchableOpacity>
       </View>
+      
+      {/* Running Orders Modal */}
+      <RunningOrdersScreen 
+        visible={showRunningOrders} 
+        onClose={() => setShowRunningOrders(false)} 
+      />
     </SafeAreaView>
   );
 };

@@ -8,7 +8,7 @@ import {
   TouchableOpacity, 
   StatusBar 
 } from 'react-native';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
 import COLORS from '../../constants/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -80,6 +80,16 @@ const SellerDashboard = () => {
   const handleNavigateToMyFood = () => {
     setActiveTab('menu');
     navigation.navigate('MyFoodScreen');
+  };
+  
+  const handleNavigateToAddNewItems = () => {
+    setActiveTab('add');
+    // Use CommonActions.navigate to prevent stack issues
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'AddNewItemsScreen'
+      })
+    );
   };
 
   return (
@@ -212,7 +222,7 @@ const SellerDashboard = () => {
         
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => setActiveTab('add')}
+          onPress={handleNavigateToAddNewItems}
         >
           <Feather name="plus" size={24} color="#FB6D3A" />
         </TouchableOpacity>

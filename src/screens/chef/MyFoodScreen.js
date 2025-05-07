@@ -106,6 +106,13 @@ const MyFoodScreen = () => {
           routes: [{ name: 'SellerDashboard' }],
         })
       );
+    } else if (tabName === 'add') {
+      // Navigate to add new items screen
+      navigation.dispatch(
+        CommonActions.navigate({
+          name: 'AddNewItemsScreen'
+        })
+      );
     }
     // Implement other tab navigations as needed
   };

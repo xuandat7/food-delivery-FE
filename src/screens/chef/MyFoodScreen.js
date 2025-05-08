@@ -15,9 +15,9 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-const FoodItem = ({ item }) => {
+const FoodItem = ({ item, onPress }) => {
   return (
-    <View style={styles.foodItem}>
+    <TouchableOpacity style={styles.foodItem} onPress={() => onPress(item)}>
       <View style={styles.foodImage} />
       <View style={styles.foodInfo}>
         <View style={styles.foodHeader}>
@@ -42,7 +42,7 @@ const FoodItem = ({ item }) => {
           <Text style={styles.pickupText}>Pick UP</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -94,6 +94,10 @@ const MyFoodScreen = () => {
   
   const handleBackPress = () => {
     navigation.goBack();
+  };
+
+  const handleFoodItemPress = (foodItem) => {
+    navigation.navigate('ChefFoodDetails', { foodItem });
   };
   
   const handleTabPress = (tabName) => {
@@ -160,7 +164,7 @@ const MyFoodScreen = () => {
       <FlatList
         data={foodItems}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <FoodItem item={item} />}
+        renderItem={({ item }) => <FoodItem item={item} onPress={handleFoodItemPress} />}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -13,16 +13,25 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import WithdrawSuccessScreen from './WithdrawSuccessScreen';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
+  const [balance, setBalance] = useState(500); // Initialize with $500
+  const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
   
   const handleBack = () => {
     navigation.goBack();
   };
 
   const handleWithdraw = () => {
-    Alert.alert('Withdraw', 'Withdrawal functionality coming soon');
+    setWithdrawModalVisible(true);
+  };
+
+  const handleWithdrawClose = () => {
+    setWithdrawModalVisible(false);
+    // Set balance to 0 after withdrawal
+    setBalance(0);
   };
 
   const handlePersonalInfo = () => {
@@ -75,10 +84,19 @@ const ProfileScreen = () => {
         </View>
 
         <Text style={styles.balanceLabel}>Available Balance</Text>
-        <Text style={styles.balanceAmount}>$500.00</Text>
+        <Text style={styles.balanceAmount}>${balance.toFixed(2)}</Text>
 
-        <TouchableOpacity style={styles.withdrawButton} onPress={handleWithdraw}>
-          <Text style={styles.withdrawText}>Withdraw</Text>
+        <TouchableOpacity 
+          style={styles.withdrawButton} 
+          onPress={handleWithdraw}
+          disabled={balance === 0}
+        >
+          <Text style={[
+            styles.withdrawText, 
+            balance === 0 && styles.disabledText
+          ]}>
+            Withdraw
+          </Text>
         </TouchableOpacity>
       </View>
       
@@ -141,6 +159,12 @@ const ProfileScreen = () => {
           <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
         </TouchableOpacity>
       </View>
+
+      {/* Withdraw Success Modal */}
+      <WithdrawSuccessScreen 
+        visible={withdrawModalVisible} 
+        onClose={handleWithdrawClose} 
+      />
     </View>
   );
 };
@@ -204,6 +228,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
+  },
+  disabledText: {
+    opacity: 0.5,
   },
   menuSection: {
     backgroundColor: '#FFFFFF',

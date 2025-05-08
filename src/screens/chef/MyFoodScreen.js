@@ -49,8 +49,8 @@ const FoodItem = ({ item, onPress }) => {
 const MyFoodScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('menu');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   
   // Ensure the correct tab is highlighted when screen is focused
   useEffect(() => {
@@ -117,6 +117,12 @@ const MyFoodScreen = () => {
           name: 'AddNewItemsScreen'
         })
       );
+    } else if (tabName === 'profile') {
+      // Navigate to the profile screen
+      navigation.navigate('ProfileScreen');
+    } else if (tabName === 'notifications') {
+      // Navigate to the notifications screen
+      navigation.navigate('NotificationScreen');
     }
     // Implement other tab navigations as needed
   };

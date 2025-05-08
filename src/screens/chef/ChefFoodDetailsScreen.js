@@ -75,25 +75,18 @@ const ChefFoodDetailsScreen = ({ route }) => {
   };
 
   const handleTabPress = (tabName) => {
-      setActiveTab(tabName);
-      if (tabName === 'home') {
-        // Use navigate and reset to prevent adding new instances to the stack
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'SellerDashboard' }],
-          })
-        );
-      } else if (tabName === 'add') {
-        // Navigate to add new items screen
-        navigation.dispatch(
-          CommonActions.navigate({
-            name: 'AddNewItemsScreen'
-          })
-        );
-      }
-      // Implement other tab navigations as needed
-    };
+    if (tabName === 'home') {
+      navigation.navigate('SellerDashboard');
+    } else if (tabName === 'menu') {
+      navigation.navigate('MyFoodScreen');
+    } else if (tabName === 'add') {
+      navigation.navigate('AddNewItemsScreen');
+    } else if (tabName === 'profile') {
+      navigation.navigate('ProfileScreen');
+    } else if (tabName === 'notifications') {
+      navigation.navigate('NotificationScreen');
+    }
+  };
 
   // Mock ingredients data (would come from API in a real app)
   const ingredients = [

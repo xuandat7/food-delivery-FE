@@ -92,6 +92,32 @@ const SellerDashboard = () => {
     );
   };
 
+  const handleTabPress = (tabName) => {
+    setActiveTab(tabName);
+    if (tabName === 'home') {
+      // Use navigate and reset to prevent adding new instances to the stack
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'SellerDashboard' }],
+        })
+      );
+    } else if (tabName === 'add') {
+      // Navigate to add new items screen
+      navigation.dispatch(
+        CommonActions.navigate({
+          name: 'AddNewItemsScreen'
+        })
+      );
+    } else if (tabName === 'menu') {
+      navigation.navigate('MyFoodScreen');
+    } else if (tabName === 'profile') {
+      navigation.navigate('ProfileScreen');
+    } else if (tabName === 'notifications') {
+      navigation.navigate('NotificationScreen');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F7F8" />
@@ -200,7 +226,7 @@ const SellerDashboard = () => {
       <View style={styles.tabBar}>
         <TouchableOpacity 
           style={styles.tabItem}
-          onPress={() => setActiveTab('home')}
+          onPress={() => handleTabPress('home')}
         >
           <MaterialCommunityIcons 
             name="view-grid-outline" 
@@ -211,7 +237,7 @@ const SellerDashboard = () => {
         
         <TouchableOpacity 
           style={styles.tabItem}
-          onPress={handleNavigateToMyFood}
+          onPress={() => handleTabPress('menu')}
         >
           <Feather 
             name="menu" 
@@ -222,14 +248,14 @@ const SellerDashboard = () => {
         
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={handleNavigateToAddNewItems}
+          onPress={() => handleTabPress('add')}
         >
           <Feather name="plus" size={24} color="#FB6D3A" />
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.tabItem}
-          onPress={() => setActiveTab('notifications')}
+          onPress={() => handleTabPress('notifications')}
         >
           <Ionicons 
             name="notifications-outline" 
@@ -240,7 +266,7 @@ const SellerDashboard = () => {
         
         <TouchableOpacity 
           style={styles.tabItem}
-          onPress={() => setActiveTab('profile')}
+          onPress={() => handleTabPress('profile')}
         >
           <Feather 
             name="user" 

@@ -23,6 +23,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "hostUri": "172.11.12.84:8081"
   }
 }

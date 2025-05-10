@@ -17,6 +17,11 @@ import AuthNavigator from '../screens/auth/AuthNavigator';
 
 // Import main screens
 import HomeScreen from '../screens/home/HomeScreen';
+import SearchScreen from '../screens/home/SearchScreen';
+import RestaurantViewScreen from '../screens/home/RestaurantViewScreen';
+import FilterScreen from '../screens/home/FilterScreen';
+import FoodSearchScreen from '../screens/home/FoodSearchScreen';
+import FoodDetailsScreen from '../screens/home/FoodDetailsScreen';
 
 // Create stack navigators
 const Stack = createNativeStackNavigator();
@@ -48,10 +53,15 @@ const AppNavigator = () => {
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Auth" component={AuthNavigator} />
+        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="RestaurantView" component={RestaurantViewScreen} />
+        <Stack.Screen name="FoodSearch" component={FoodSearchScreen} />
+        <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
+        <Stack.Screen name="Filter" component={FilterScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 };
 
-export default AppNavigator; 
+export default AppNavigator;

@@ -63,7 +63,7 @@ const LoginScreen = () => {
 
     if (isEmailValid && isPasswordValid) {
       // Perform login operation
-      navigation.navigate('Home');
+      navigation.navigate('Search');
     }
   };
   

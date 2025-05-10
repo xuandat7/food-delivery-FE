@@ -15,6 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../../services/api';
 
 const { height, width } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ const NewPasswordScreen = () => {
   const route = useRoute();
   
   const email = route.params?.email || "example@gmail.com";
+  const otp = route.params?.otp || "";
   const isRestaurant = route.params?.isRestaurant || false;
   
   const [password, setPassword] = useState('');
@@ -83,7 +85,7 @@ const NewPasswordScreen = () => {
   };
 
   // Handle reset password
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     // Validate all fields
     if (!password) {
       setPasswordError('Mật khẩu là bắt buộc');
@@ -99,22 +101,37 @@ const NewPasswordScreen = () => {
       return;
     }
     
-    // In a real app, you would call API to reset password
-    console.log('Resetting password:', password);
-    
-    // Show success message
-    Alert.alert(
-      "Thành Công",
-      "Mật khẩu của bạn đã được đặt lại thành công.",
-      [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            navigation.navigate('Login', { isRestaurant });
-          } 
-        }
-      ]
-    );
+    try {
+      console.log('Attempting to reset password for:', email);
+      console.log('Using OTP:', otp);
+      
+      // Call the reset password API with email, otp, and newPassword
+      const response = await api.auth.resetPassword(email, otp, password);
+      
+      console.log('Reset password response:', response);
+      
+      if (response.success) {
+        // Show success message
+        Alert.alert(
+          "Thành Công",
+          "Mật khẩu của bạn đã được đặt lại thành công.",
+          [
+            { 
+              text: 'OK', 
+              onPress: () => {
+                navigation.navigate('Login', { isRestaurant });
+              } 
+            }
+          ]
+        );
+      } else {
+        // Show error message
+        Alert.alert("Thất Bại", response.message || "Không thể đặt lại mật khẩu, vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      Alert.alert("Lỗi", error.message || "Đã xảy ra lỗi khi đặt lại mật khẩu");
+    }
   };
 
   return (
@@ -172,42 +189,32 @@ const NewPasswordScreen = () => {
                 keyboardShouldPersistTaps="handled"
               >
                 {/* Password section */}
-                <View style={styles.inputSection}>
+                <View style={styles.inputGroup}>
                   <Text style={[styles.inputLabel, { color: theme.text }]}>MẬT KHẨU MỚI</Text>
-                  
-                  <View style={styles.passwordInputContainer}>
+                  <View style={[styles.inputContainer, { 
+                    borderColor: passwordError ? 'red' : theme.inputBorder,
+                    backgroundColor: theme.inputBackground
+                  }]}>
                     <TextInput
-                      style={[
-                        styles.input, 
-                        { 
-                          borderColor: passwordError ? theme.error : theme.inputBorder,
-                          backgroundColor: theme.inputBackground,
-                          color: theme.text
-                        }
-                      ]}
+                      style={[styles.input, { color: theme.text, letterSpacing: password ? 0 : -0.5 }]}
+                      placeholder="Nhập mật khẩu mới"
+                      placeholderTextColor={theme.placeholderText}
+                      secureTextEntry={!showPassword}
                       value={password}
                       onChangeText={validatePassword}
-                      secureTextEntry={!showPassword}
-                      placeholder="Nhập mật khẩu mới"
-                      placeholderTextColor={theme.textSecondary}
                     />
-                    <TouchableOpacity 
-                      style={styles.eyeButton} 
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
                       onPress={togglePasswordVisibility}
                     >
-                      <Ionicons 
-                        name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                        size={22} 
-                        color={theme.textSecondary} 
+                      <Ionicons
+                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={22}
+                        color={theme.placeholderText}
                       />
                     </TouchableOpacity>
                   </View>
-                  
-                  {passwordError ? (
-                    <Text style={[styles.errorText, { color: theme.error }]}>
-                      {passwordError}
-                    </Text>
-                  ) : null}
+                  {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
                   
                   <View style={styles.passwordRequirements}>
                     <Text style={[styles.requirementText, { color: theme.textSecondary }]}>
@@ -215,70 +222,72 @@ const NewPasswordScreen = () => {
                     </Text>
                     <View style={styles.requirementItem}>
                       <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
-                      <Text style={[styles.requirementItem, { color: theme.textSecondary }]}>
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
                         Ít nhất 8 ký tự
                       </Text>
                     </View>
                     <View style={styles.requirementItem}>
                       <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
-                      <Text style={[styles.requirementItem, { color: theme.textSecondary }]}>
-                        Chữ hoa và chữ thường
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một chữ cái viết hoa
                       </Text>
                     </View>
                     <View style={styles.requirementItem}>
                       <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
-                      <Text style={[styles.requirementItem, { color: theme.textSecondary }]}>
-                        Ít nhất một số và một ký tự đặc biệt
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một chữ cái viết thường
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một chữ số
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một ký tự đặc biệt (!@#$%^&*)
                       </Text>
                     </View>
                   </View>
                 </View>
                 
                 {/* Confirm Password section */}
-                <View style={[styles.inputSection, { marginTop: 20 }]}>
+                <View style={styles.inputGroup}>
                   <Text style={[styles.inputLabel, { color: theme.text }]}>XÁC NHẬN MẬT KHẨU</Text>
-                  
-                  <View style={styles.passwordInputContainer}>
+                  <View style={[styles.inputContainer, { 
+                    borderColor: confirmPasswordError ? 'red' : theme.inputBorder,
+                    backgroundColor: theme.inputBackground
+                  }]}>
                     <TextInput
-                      style={[
-                        styles.input, 
-                        { 
-                          borderColor: confirmPasswordError ? theme.error : theme.inputBorder,
-                          backgroundColor: theme.inputBackground,
-                          color: theme.text
-                        }
-                      ]}
+                      style={[styles.input, { color: theme.text, letterSpacing: confirmPassword ? 0 : -0.5 }]}
+                      placeholder="Nhập lại mật khẩu mới"
+                      placeholderTextColor={theme.placeholderText}
+                      secureTextEntry={!showConfirmPassword}
                       value={confirmPassword}
                       onChangeText={validateConfirmPassword}
-                      secureTextEntry={!showConfirmPassword}
-                      placeholder="Nhập lại mật khẩu mới"
-                      placeholderTextColor={theme.textSecondary}
                     />
-                    <TouchableOpacity 
-                      style={styles.eyeButton} 
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
                       onPress={toggleConfirmPasswordVisibility}
                     >
-                      <Ionicons 
-                        name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
-                        size={22} 
-                        color={theme.textSecondary} 
+                      <Ionicons
+                        name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={22}
+                        color={theme.placeholderText}
                       />
                     </TouchableOpacity>
                   </View>
-                  
-                  {confirmPasswordError ? (
-                    <Text style={[styles.errorText, { color: theme.error }]}>
-                      {confirmPasswordError}
-                    </Text>
-                  ) : null}
+                  {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
                 </View>
                 
                 {/* Reset Password Button */}
                 <TouchableOpacity 
-                  style={[styles.resetButton, { backgroundColor: theme.primaryButton }]} 
+                  style={[styles.loginButton, { backgroundColor: theme.primaryButton }]} 
                   onPress={handleResetPassword}
                 >
-                  <Text style={[styles.resetButtonText, { color: theme.background }]}>
+                  <Text style={[styles.loginButtonText, { color: theme.background }]}>
                     ĐẶT LẠI MẬT KHẨU
                   </Text>
                 </TouchableOpacity>
@@ -361,7 +370,7 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 2,
   },
-  inputSection: {
+  inputGroup: {
     marginBottom: 20,
   },
   inputLabel: {
@@ -369,7 +378,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
   },
-  passwordInputContainer: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
@@ -382,7 +391,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: SIZES.medium,
   },
-  eyeButton: {
+  eyeIcon: {
     position: 'absolute',
     right: 12,
     height: '100%',
@@ -408,13 +417,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  bullet: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    marginRight: 8,
+  requirementItemText: {
+    marginLeft: 8,
   },
-  resetButton: {
+  loginButton: {
     borderRadius: SIZES.buttonRadius,
     height: SIZES.inputHeight,
     justifyContent: 'center',
@@ -422,7 +428,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30,
   },
-  resetButtonText: {
+  loginButtonText: {
     fontSize: SIZES.medium,
     fontWeight: '700',
   },

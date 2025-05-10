@@ -15,6 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../../services/api';
 
 const { height, width } = Dimensions.get('window');
 
@@ -72,8 +73,20 @@ const SignUpScreen = () => {
     if (!text.trim()) {
       setPasswordError('Mật khẩu là bắt buộc');
       return false;
-    } else if (text.length < 6) {
-      setPasswordError('Mật khẩu phải có ít nhất 6 ký tự');
+    } else if (text.length < 8) {
+      setPasswordError('Mật khẩu phải có ít nhất 8 ký tự');
+      return false;
+    } else if (!/[A-Z]/.test(text)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một chữ cái viết hoa');
+      return false;
+    } else if (!/[a-z]/.test(text)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một chữ cái viết thường');
+      return false;
+    } else if (!/[0-9]/.test(text)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một chữ số');
+      return false;
+    } else if (!/[!@#$%^&*]/.test(text)) {
+      setPasswordError('Mật khẩu phải chứa ít nhất một ký tự đặc biệt (!@#$%^&*)');
       return false;
     }
     
@@ -100,7 +113,7 @@ const SignUpScreen = () => {
     return true;
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     // Validate all fields
     const isNameValid = validateName(name);
     const isEmailValid = validateEmail(email);
@@ -108,23 +121,46 @@ const SignUpScreen = () => {
     const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
     
     if (isNameValid && isEmailValid && isPasswordValid && isConfirmPasswordValid) {
-      // In a real app, you would register the user with your backend
-      console.log('Sign up pressed with:', { name, email, password, isRestaurant });
-      
-      // Show success message
-      Alert.alert(
-        "Đăng Ký Thành Công",
-        isRestaurant ? "Tài khoản nhà hàng của bạn đã được tạo thành công." : "Tài khoản của bạn đã được tạo thành công.",
-        [
-          { 
-            text: 'OK', 
-            onPress: () => {
-              // Navigate to verification screen
-              navigation.navigate('Verification', { email, isRestaurant });
-            } 
-          }
-        ]
-      );
+      try {
+        // Create user data object
+        const userData = {
+          name: name,
+          email: email,
+          password: password,
+          // Add other fields if needed by your API
+        };
+        
+        console.log('Attempting registration with:', userData);
+        
+        // Call the registration API
+        const response = await api.auth.register(userData, isRestaurant);
+        
+        console.log('Registration response:', response);
+        
+        if (response.success) {
+          // Show success message
+          Alert.alert(
+            "Đăng Ký Thành Công",
+            isRestaurant 
+              ? "Tài khoản nhà hàng của bạn đã được tạo thành công." 
+              : "Tài khoản của bạn đã được tạo thành công.",
+            [
+              { 
+                text: 'OK', 
+                onPress: () => {
+                  // Navigate to login screen after successful registration
+                  navigation.navigate('Login', { isRestaurant });
+                } 
+              }
+            ]
+          );
+        } else {
+          // Show error message
+          Alert.alert("Đăng Ký Thất Bại", response.message || "Không thể đăng ký tài khoản, vui lòng thử lại sau.");
+        }
+      } catch (error) {
+        Alert.alert("Lỗi", error.message || "Đã xảy ra lỗi khi đăng ký tài khoản");
+      }
     }
   };
 
@@ -177,7 +213,7 @@ const SignUpScreen = () => {
               styles.whiteContainer, 
               { 
                 backgroundColor: theme.background,
-                minHeight: height - 240, // Adjust based on top section height
+                minHeight: height - 180, // Adjust based on reduced top section height
               }
             ]}>
               <ScrollView 
@@ -253,6 +289,43 @@ const SignUpScreen = () => {
                     </TouchableOpacity>
                   </View>
                   {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+                  
+                  {/* Password requirements */}
+                  <View style={styles.passwordRequirements}>
+                    <Text style={[styles.requirementText, { color: theme.textSecondary }]}>
+                      Mật khẩu phải có:
+                    </Text>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất 8 ký tự
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một chữ cái viết hoa
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một chữ cái viết thường
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một chữ số
+                      </Text>
+                    </View>
+                    <View style={styles.requirementItem}>
+                      <View style={[styles.bullet, { backgroundColor: theme.textSecondary }]} />
+                      <Text style={[styles.requirementItemText, { color: theme.textSecondary }]}>
+                        Ít nhất một ký tự đặc biệt (!@#$%^&*)
+                      </Text>
+                    </View>
+                  </View>
                 </View>
                 
                 {/* Confirm Password input */}
@@ -291,16 +364,6 @@ const SignUpScreen = () => {
                 >
                   <Text style={[styles.signUpButtonText, {color: theme.background}]}>ĐĂNG KÝ</Text>
                 </TouchableOpacity>
-                
-                {/* Already have account */}
-                <View style={styles.haveAccountContainer}>
-                  <Text style={[styles.haveAccountText, {color: theme.textSecondary}]}>
-                    Đã có tài khoản?
-                  </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Login', { isRestaurant })}>
-                    <Text style={[styles.loginText, {color: theme.primaryButton}]}>ĐĂNG NHẬP</Text>
-                  </TouchableOpacity>
-                </View>
               </ScrollView>
             </View>
           </View>
@@ -338,7 +401,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 50,
+    top: 30,
     left: 24,
     width: 45,
     height: 45,
@@ -348,24 +411,24 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   topSection: {
-    marginTop: 120,
-    marginBottom: 20,
+    marginTop: 80,
+    marginBottom: 10,
     paddingHorizontal: SIZES.padding,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   title: {
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 5,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: SIZES.large,
+    fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 20,
   },
   whiteContainer: {
     borderTopLeftRadius: SIZES.cardBorderRadius,
@@ -417,25 +480,34 @@ const styles = StyleSheet.create({
     fontSize: SIZES.medium,
     fontWeight: '700',
   },
-  haveAccountContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  haveAccountText: {
-    fontSize: SIZES.small,
-  },
-  loginText: {
-    fontSize: SIZES.medium,
-    fontWeight: '700',
-    marginLeft: 10,
-  },
   errorText: {
     color: 'red',
     fontSize: 14,
     marginTop: 5,
-  }
+  },
+  passwordRequirements: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  requirementText: {
+    fontSize: SIZES.small,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  bullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  requirementItemText: {
+    fontSize: 12,
+  },
 });
 
 export default SignUpScreen; 

@@ -15,6 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../../services/api';
 
 const { height, width } = Dimensions.get('window');
 
@@ -70,51 +71,75 @@ const VerificationScreen = () => {
   };
 
   // Verify OTP
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const otpValue = otp.join('');
     if (otpValue.length !== 6) {
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ mã xác nhận');
       return;
     }
     
-    // In a real app, you would validate the OTP with your backend
-    console.log('Verifying OTP:', otpValue);
-    
-    // Show success message
-    Alert.alert(
-      "Xác Minh Thành Công",
-      fromForgotPassword 
-        ? "Bạn có thể đặt lại mật khẩu của mình."
-        : "Tài khoản của bạn đã được xác minh thành công.",
-      [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            // Navigate to next screen on success
-            if (fromForgotPassword) {
-              navigation.navigate('NewPassword', { email, isRestaurant });
-            } else {
-              navigation.navigate('Login');
+    try {
+      // Call the verify OTP API
+      const response = await api.auth.verifyOTP(email, otpValue);
+      
+      if (response.success) {
+        // Show success message
+        Alert.alert(
+          "Xác Minh Thành Công",
+          fromForgotPassword 
+            ? "Bạn có thể đặt lại mật khẩu của mình."
+            : "Tài khoản của bạn đã được xác minh thành công.",
+          [
+            { 
+              text: 'OK', 
+              onPress: () => {
+                // Navigate to next screen on success
+                if (fromForgotPassword) {
+                  // Pass the OTP to the NewPassword screen
+                  const otpValue = otp.join('');
+                  navigation.navigate('NewPassword', { 
+                    email, 
+                    otp: otpValue, 
+                    isRestaurant 
+                  });
+                } else {
+                  navigation.navigate('Login');
+                }
+              } 
             }
-          } 
-        }
-      ]
-    );
+          ]
+        );
+      } else {
+        // Show error message
+        Alert.alert("Xác Minh Thất Bại", response.message || "Mã xác nhận không hợp lệ, vui lòng thử lại.");
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", error.message || "Đã xảy ra lỗi khi xác minh mã OTP");
+    }
   };
 
   // Resend OTP
-  const handleResend = () => {
+  const handleResend = async () => {
     if (isResendActive) {
-      // In a real app, you would call API to resend OTP
-      console.log('Resending OTP to:', email);
-      setTimeLeft(50);
-      setIsResendActive(false);
-      
-      // Clear OTP fields
-      setOtp(['', '', '', '', '', '']);
-      
-      // Show message
-      Alert.alert('Thành Công', 'Mã xác nhận mới đã được gửi');
+      try {
+        // Call the forgot password API again to resend OTP
+        const response = await api.auth.forgotPassword(email);
+        
+        if (response.success) {
+          // Reset timer and OTP fields
+          setTimeLeft(50);
+          setIsResendActive(false);
+          setOtp(['', '', '', '', '', '']);
+          
+          // Show success message
+          Alert.alert('Thành Công', 'Mã xác nhận mới đã được gửi');
+        } else {
+          // Show error message
+          Alert.alert("Thất Bại", response.message || "Không thể gửi lại mã xác nhận, vui lòng thử lại sau.");
+        }
+      } catch (error) {
+        Alert.alert("Lỗi", error.message || "Đã xảy ra lỗi khi gửi lại mã xác nhận");
+      }
     }
   };
 

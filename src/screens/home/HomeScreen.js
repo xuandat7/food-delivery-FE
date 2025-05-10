@@ -1,45 +1,84 @@
-import React from "react";
-import { View, Text, ScrollView, Image } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Search } from "../../components/home/Search";
-import { Top } from "../../components/home/Top";
-import { AllCategories } from "../../components/home/AllCategories";
-import { HeyHalalGood } from "../../components/home/HeyHalalGood";
-import { Restaurant } from "../../components/home/Restaurant";
-import { RestaurantWrapper } from "../../components/home/RestaurantWrapper";
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { AsyncStorage } from '../../services/api';
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Kiểm tra token khi component được mount
+    const checkToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        console.log('Token from storage:', token);
+        
+        if (!token) {
+          console.log('No token found, redirecting to Login');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          });
+        } else {
+          // Token is valid, continue to Home
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error checking token:', error);
+        setIsLoading(false);
+      }
+    };
+
+    checkToken();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#1976D2" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <StatusBar style="dark" />
-      <ScrollView className="flex-1">
-        <View className="px-4">
-          <Search />
-          <Top />
-          <HeyHalalGood />
-          <AllCategories />
-          
-          <View className="mt-6">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl text-[#31343d] font-normal">
-                Open Restaurants
-              </Text>
-              <View className="flex-row items-center">
-                <Text className="text-base text-[#333333] mr-2">See All</Text>
-                <Image 
-                  source={require("../../../assets/icon.png")}
-                  className="w-[7px] h-3"
-                />
-              </View>
-            </View>
-            <Restaurant />
-            <RestaurantWrapper />
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Text style={styles.text}>Trang Chủ</Text>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Profile')}>
+        <Text style={styles.buttonText}>Đi tới Profile</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  button: {
+    marginTop: 24,
+    backgroundColor: '#1976D2',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
 
 export default HomeScreen; 

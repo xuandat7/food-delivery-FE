@@ -13,17 +13,27 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shuppufit.foodapp2"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.shuppufit.foodapp2"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "hostUri": "172.11.12.84:8081"
+    "scheme": "shuppufit",
+    "plugins": [
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f99b1b4b-e2c3-4463-8296-693e7d8d6cb9"
+      }
+    }
   }
 }

@@ -15,6 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../../services/api';
 
 const { height, width } = Dimensions.get('window');
 
@@ -44,7 +45,7 @@ const ForgotPasswordScreen = () => {
   };
 
   // Handle submit
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!email.trim()) {
       setEmailError('Email là bắt buộc');
       return;
@@ -56,27 +57,36 @@ const ForgotPasswordScreen = () => {
       return;
     }
     
-    // In a real app, you would call API to send reset email
-    console.log('Reset password for email:', email);
-    
-    // Show a confirmation and proceed to verification screen
-    Alert.alert(
-      "Thành Công",
-      "Mã xác nhận đã được gửi đến email của bạn",
-      [
-        { 
-          text: 'OK', 
-          onPress: () => {
-            // Navigate to verification screen
-            navigation.navigate('Verification', { 
-              email, 
-              isRestaurant,
-              fromForgotPassword: true 
-            });
-          }
-        }
-      ]
-    );
+    try {
+      // Call the forgot password API
+      const response = await api.auth.forgotPassword(email);
+      
+      if (response.success) {
+        // Show success message and proceed to verification screen
+        Alert.alert(
+          "Thành Công",
+          "Mã xác nhận đã được gửi đến email của bạn",
+          [
+            { 
+              text: 'OK', 
+              onPress: () => {
+                // Navigate to verification screen
+                navigation.navigate('Verification', { 
+                  email, 
+                  isRestaurant,
+                  fromForgotPassword: true 
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        // Show error message
+        Alert.alert("Thất Bại", response.message || "Không thể gửi mã xác nhận, vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", error.message || "Đã xảy ra lỗi khi gửi mã xác nhận");
+    }
   };
 
   return (

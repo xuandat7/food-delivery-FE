@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,9 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../../services/api';
+import { AsyncStorage } from '../../services/api';
+import { getGoogleAuthRequest } from '../../services/googleAuth';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -31,6 +34,32 @@ const LoginScreen = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
+  // Google Auth Session
+  const { request, response, promptAsync } = getGoogleAuthRequest();
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      if (id_token) {
+        handleGoogleLogin(id_token);
+      }
+    }
+  }, [response]);
+
+  const handleGoogleLogin = async (idToken) => {
+    try {
+      const res = await api.auth.loginWithGoogle(idToken);
+      if (res.success) {
+        Alert.alert('Đăng nhập thành công', 'Bạn đã đăng nhập thành công với Google');
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      } else {
+        throw new Error(res.message || 'Đăng nhập với Google thất bại');
+      }
+    } catch (error) {
+      Alert.alert('Đăng nhập thất bại', error.message || 'Đã xảy ra lỗi khi đăng nhập với Google');
+    }
+  };
+
   const validateEmail = (text) => {
     setEmail(text);
     
@@ -57,16 +86,50 @@ const LoginScreen = () => {
     return true;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
 
     if (isEmailValid && isPasswordValid) {
-      // Navigate to different screens based on user type
-      if (isRestaurant) {
-        navigation.navigate('SellerDashboard');
-      } else {
-        navigation.navigate('Home');
+      try {
+        // Show loading indicator or disable button here
+        
+        console.log('Attempting login with:', { email, password, isRestaurant });
+        
+        // Call login API
+        const response = await api.auth.login(email, password, isRestaurant);
+        
+        console.log('Login response:', response);
+        
+        if (response.success) {
+          // Store token in AsyncStorage
+          if (response.data.access_token) {
+            await AsyncStorage.setItem('token', response.data.access_token);
+            console.log('Token stored in AsyncStorage:', response.data.access_token);
+            
+            // Store user info if available
+            if (response.data.user) {
+              await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+              console.log('User data stored in AsyncStorage');
+            }
+          } else {
+            console.error('No access_token found in login response', response.data);
+          }
+          
+          // Navigate to home screen
+          console.log('Navigating to Home screen');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        } else {
+          // Show error message
+          console.error('Login failed:', response.message);
+          Alert.alert('Đăng nhập thất bại', response.message || 'Vui lòng kiểm tra lại email và mật khẩu');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        Alert.alert('Lỗi', error.message || 'Đã xảy ra lỗi khi đăng nhập');
       }
     }
   };
@@ -75,8 +138,54 @@ const LoginScreen = () => {
     navigation.navigate('ForgotPassword', { isRestaurant });
   };
 
-  const handleSocialLogin = (platform) => {
+  const handleSocialLogin = async (platform) => {
+    if (platform === 'Google') {
+      // Thực hiện đăng nhập Google khi bấm vào icon
+      try {
+        console.log('Starting Google sign in flow...');
+        
+        // Gọi hàm đăng nhập với Google - sẽ hiển thị giao diện chọn tài khoản Google
+        const googleResult = await signInWithGoogle();
+        
+        if (!googleResult.success) {
+          throw new Error(googleResult.error || 'Không thể đăng nhập với Google');
+        }
+        
+        console.log('Got Google ID token, sending to backend...');
+        
+        // Gửi ID token đến backend để xác thực
+        const response = await api.auth.loginWithGoogle(googleResult.idToken);
+        
+        console.log('Backend login response:', response);
+        
+        if (response.success) {
+          Alert.alert('Đăng nhập thành công', 'Bạn đã đăng nhập thành công với Google');
+          
+          // Chuyển hướng đến màn hình chính
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        } else {
+          throw new Error(response.message || 'Đăng nhập với Google thất bại');
+        }
+      } catch (error) {
+        console.error('Google sign in error:', error);
+        Alert.alert('Đăng nhập thất bại', error.message || 'Đã xảy ra lỗi khi đăng nhập với Google');
+      }
+      return;
+    }
     Alert.alert(`Đăng nhập ${platform}`, `Đăng nhập ${platform} sẽ được triển khai sớm`);
+  };
+
+  const handleGoogleLoginSuccess = (response) => {
+    console.log('Google login successful:', response);
+    Alert.alert('Đăng nhập thành công', 'Bạn đã đăng nhập thành công với Google');
+  };
+  
+  const handleGoogleLoginError = (errorMessage) => {
+    console.error('Google login error:', errorMessage);
+    Alert.alert('Đăng nhập thất bại', errorMessage || 'Đã xảy ra lỗi khi đăng nhập với Google');
   };
 
   const handleSwitchUserType = () => {
@@ -205,9 +314,9 @@ const LoginScreen = () => {
               </View>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.socialButton} onPress={() => handleSocialLogin('Twitter')}>
-              <View style={[styles.socialIconBg, styles.twitterBg]}>
-                <Ionicons name="logo-twitter" size={24} color="white" />
+            <TouchableOpacity style={styles.socialButton} onPress={() => promptAsync()} disabled={!request}>
+              <View style={[styles.socialIconBg, styles.googleBg]}>
+                <Ionicons name="logo-google" size={24} color="white" />
               </View>
             </TouchableOpacity>
             
@@ -402,8 +511,8 @@ const styles = StyleSheet.create({
   fbBg: {
     backgroundColor: COLORS.facebookBlue,
   },
-  twitterBg: {
-    backgroundColor: COLORS.twitterBlue,
+  googleBg: {
+    backgroundColor: '#DB4437', // Google red color
   },
   appleBg: {
     backgroundColor: COLORS.appleBlack,

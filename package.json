@@ -17,7 +17,6 @@
     "expo-auth-session": "~6.1.5",
     "expo-crypto": "^14.1.4",
     "expo-status-bar": "~2.2.3",
-    "expo-web-browser": "~14.1.6",
     "firebase": "^11.7.1",
     "react": "19.0.0",
     "react-native": "0.79.2",

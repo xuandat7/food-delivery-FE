@@ -9,7 +9,10 @@ import { HeyHalalGood } from "../../components/home/HeyHalalGood";
 import { Restaurant } from "../../components/home/Restaurant";
 import { RestaurantWrapper } from "../../components/home/RestaurantWrapper";
 import { FontAwesome, Ionicons, Entypo } from '@expo/vector-icons';
-
+import { useNavigation } from '@react-navigation/native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, ActivityIndicator } from "react-native"; // Thêm ActivityIndicator vào import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
@@ -107,5 +110,14 @@ const HomeScreen = () => {
     </SafeAreaView>
   );
 };
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContainer: {
+    backgroundColor: "#fff",
+  },
+});
 export default HomeScreen; 

@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Base URL for API calls - THAY ĐỔI IP NÀY THÀNH IP THỰC TẾ CỦA MÁY TÍNH CỦA BẠN
-const BASE_URL = 'http://192.168.53.105:4000'; // Đổi cổng từ 3001 thành 4000
+const BASE_URL = 'http://192.168.1.150:3001'; // Đổi cổng từ 3001 thành 4000
 
 // Log API URL
 console.log('Using API URL:', BASE_URL);

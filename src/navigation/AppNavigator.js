@@ -15,8 +15,9 @@ import AuthNavigator from '../screens/auth/AuthNavigator';
 
 // Import main screens
 import HomeScreen from '../screens/home/HomeScreen';
-import ProfileScreen from '../screens/home/ProfileScreen';
+// import ProfileScreen from '../screens/home/ProfileScreen'; // This file doesn't exist
 import PersonalInfoScreen from '../screens/info/PersonalInfoScreen';
+import EditProfileScreen from '../screens/info/EditProfileScreen';
 import MenuScreen from '../screens/home/MenuScreen';
 import MyOrdersScreen from '../screens/home/MyOrdersScreen';
 
@@ -46,6 +47,9 @@ const AppNavigator = () => {
     // Initialize app - check authentication and first launch status
     const initialize = async () => {
       try {
+        // Bỏ lệnh xóa firstLaunch để không bắt buộc hiển thị onboarding mỗi lần
+        // Chỉ hiển thị onboarding khi thực sự là lần đầu
+
         // Check if token exists
         const token = await AsyncStorage.getItem('token');
         console.log('Initial token check:', token);
@@ -58,10 +62,16 @@ const AppNavigator = () => {
         
         // Check if first launch
         const firstLaunch = await AsyncStorage.getItem('firstLaunch');
+        console.log('First launch value from storage:', firstLaunch);
+        
         if (firstLaunch !== null) {
+          console.log('Not first launch, setting isFirstLaunch to false');
           setIsFirstLaunch(false);
         } else {
-          await AsyncStorage.setItem('firstLaunch', 'false');
+          console.log('First launch detected, will show onboarding');
+          // Để giá trị firstLaunch trong storage là null để hiển thị onboarding
+          // và chỉ lưu giá trị này sau khi người dùng hoàn thành onboarding
+          setIsFirstLaunch(true);
         }
       } catch (e) {
         console.log('Initialization error:', e);
@@ -81,13 +91,17 @@ const AppNavigator = () => {
   }
   
   const getInitialRouteName = () => {
-    if (isFirstLaunch) {
-      return 'Onboarding';
-    } else if (userToken) {
-      // Trả về trang phù hợp với loại người dùng
-      console.log('Determining initial route based on user type:', userType);
+    console.log('Getting initial route. isFirstLaunch:', isFirstLaunch, 'userToken:', userToken, 'userType:', userType);
+    
+    // Nếu có token, luôn đi thẳng vào màn hình chính, bỏ qua onboarding
+    if (userToken) {
+      console.log('Token found, going to main screen');
       return userType === 'restaurant' ? 'RestaurantTabs' : 'Home';
+    } else if (isFirstLaunch) {
+      console.log('Showing Onboarding screen');
+      return 'Onboarding';
     } else {
+      console.log('No token found, showing Auth screen');
       return 'Auth';
     }
   };
@@ -105,8 +119,9 @@ const AppNavigator = () => {
         
         {/* Customer screens */}
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Profile" component={ProfileScreen} />
+        {/* <Stack.Screen name="Profile" component={ProfileScreen} /> */}
         <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Menu" component={MenuScreen} />
         <Stack.Screen name="MyOrdersScreen" component={MyOrdersScreen} />
         

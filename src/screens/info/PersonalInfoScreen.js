@@ -1,35 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import api from '../../services/api';
 
 export default function PersonalInfoScreen() {
   const route = useRoute();
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
   const [userData, setUserData] = useState(route.params?.userData);
   const [loading, setLoading] = useState(!userData);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // If userData is not passed through route params, fetch it
-    if (!userData) {
-      fetchUserProfile();
+    // Chỉ tải lại dữ liệu khi màn hình được focus
+    if (isFocused) {
+      // Nếu có flag refresh hoặc không có userData, tải dữ liệu từ API
+      if (route.params?.refresh || !userData) {
+        fetchUserProfile();
+      }
+      // Nếu có userData mới từ params, cập nhật state
+      else if (route.params?.userData) {
+        setUserData(route.params.userData);
+      }
     }
-  }, []);
+  }, [isFocused, route.params]);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
+      console.log('Fetching user profile from API...');
       const response = await api.user.getProfile();
+      
       if (response.success) {
-        setUserData(response.data);
+        // Backend trả về full_name từ fullName trong entity
+        const profileData = response.data;
+        console.log('API getProfile success, data:', JSON.stringify(profileData));
+        setUserData(profileData);
       } else {
         setError(response.message);
-        Alert.alert('Error', response.message || 'Failed to load profile');
+        console.error('API getProfile failed:', response.message);
+        Alert.alert('Lỗi', response.message || 'Không thể tải thông tin hồ sơ');
       }
     } catch (err) {
       setError(err.message);
-      Alert.alert('Error', err.message || 'Something went wrong');
+      console.error('API getProfile error:', err.message);
+      Alert.alert('Lỗi', err.message || 'Đã xảy ra lỗi');
     } finally {
       setLoading(false);
     }
@@ -47,11 +63,16 @@ export default function PersonalInfoScreen() {
     <View style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.circleBtn} onPress={() => navigation.goBack()}>
-          <View style={styles.iconPlaceholder} />
+        <TouchableOpacity style={styles.circleBtn} onPress={() => {
+          // Điều hướng về màn hình Menu
+          navigation.navigate('Menu');
+        }}>
+          <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
         <Text style={styles.title}>Personal Info</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          navigation.navigate('EditProfile', { userData });
+        }}>
           <Text style={styles.editText}>EDIT</Text>
         </TouchableOpacity>
       </View>
@@ -70,7 +91,6 @@ export default function PersonalInfoScreen() {
         </View>
         <View>
           <Text style={styles.name}>{userData?.full_name || 'User Name'}</Text>
-          <Text style={styles.desc}>{userData?.desc || 'No description'}</Text>
         </View>
       </View>
 
@@ -79,16 +99,29 @@ export default function PersonalInfoScreen() {
         <InfoRow label="FULL NAME" value={userData?.full_name || 'Not provided'} />
         <InfoRow label="EMAIL" value={userData?.email || userData?.account?.email || 'Not provided'} />
         <InfoRow label="PHONE NUMBER" value={userData?.phone || 'Not provided'} />
-        {userData?.address && <InfoRow label="ADDRESS" value={userData.address} />}
+        <InfoRow label="ADDRESS" value={userData?.address || 'Not provided'} />
       </View>
     </View>
   );
 }
 
 function InfoRow({ label, value }) {
+  // Xác định icon dựa vào label
+  let iconName = 'person-outline';
+  
+  if (label === 'EMAIL') {
+    iconName = 'mail-outline';
+  } else if (label === 'PHONE NUMBER') {
+    iconName = 'call-outline';
+  } else if (label === 'ADDRESS') {
+    iconName = 'location-outline';
+  }
+
   return (
     <View style={styles.infoRow}>
-      <View style={styles.infoIconPlaceholder} />
+      <View style={styles.infoIconPlaceholder}>
+        <Ionicons name={iconName} size={20} color="#ff7621" />
+      </View>
       <View style={styles.infoTextGroup}>
         <Text style={styles.infoLabel}>{label}</Text>
         <Text style={styles.infoValue}>{value}</Text>
@@ -168,11 +201,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#32343e',
     marginBottom: 4,
-  },
-  desc: {
-    fontSize: 14,
-    color: '#a0a5ba',
-    fontWeight: '400',
   },
   infoCard: {
     backgroundColor: '#f6f8fa',

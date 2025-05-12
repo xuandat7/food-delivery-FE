@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   StyleSheet,
   StatusBar,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -14,11 +15,13 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import WithdrawSuccessScreen from './WithdrawSuccessScreen';
+import api, { AsyncStorage } from '../../services/api';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const [balance, setBalance] = useState(500); // Initialize with $500
   const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const handleBack = () => {
     navigation.goBack();
@@ -52,18 +55,43 @@ const ProfileScreen = () => {
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
       [
         {
-          text: 'Cancel',
+          text: 'Hủy',
           style: 'cancel',
         },
         {
-          text: 'Logout',
-          onPress: () => {
-            // Navigate to Auth screen on logout
-            navigation.navigate('Auth');
+          text: 'Đăng xuất',
+          onPress: async () => {
+            try {
+              setIsLoggingOut(true);
+              // Gọi API logout
+              const response = await api.auth.logout();
+              
+              console.log('Logout response:', response);
+              
+              if (response.success) {
+                // Xóa dữ liệu người dùng trong storage
+                await AsyncStorage.removeItem('token');
+                await AsyncStorage.removeItem('user');
+                await AsyncStorage.removeItem('userType');
+                
+                // Chuyển về màn hình đăng nhập
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Auth' }],
+                });
+              } else {
+                Alert.alert('Lỗi', response.message || 'Có lỗi xảy ra khi đăng xuất');
+              }
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Lỗi', 'Có lỗi xảy ra khi đăng xuất');
+            } finally {
+              setIsLoggingOut(false);
+            }
           },
         },
       ]
@@ -151,12 +179,24 @@ const ProfileScreen = () => {
       
       {/* Logout Section */}
       <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={handleLogout}
+          disabled={isLoggingOut}
+        >
           <View style={[styles.iconContainer, styles.logoutIcon]}>
-            <Feather name="log-out" size={22} color="#EF4444" />
+            {isLoggingOut ? (
+              <ActivityIndicator size="small" color="#EF4444" />
+            ) : (
+              <Feather name="log-out" size={22} color="#EF4444" />
+            )}
           </View>
-          <Text style={styles.menuText}>Log Out</Text>
-          <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
+          <Text style={styles.menuText}>
+            {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+          </Text>
+          {!isLoggingOut && (
+            <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
+          )}
         </TouchableOpacity>
       </View>
 

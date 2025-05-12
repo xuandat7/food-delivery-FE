@@ -49,15 +49,7 @@ const FoodItem = ({ item, onPress }) => {
 const MyFoodScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const [activeTab, setActiveTab] = useState('menu');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  
-  // Ensure the correct tab is highlighted when screen is focused
-  useEffect(() => {
-    if (isFocused) {
-      setActiveTab('menu');
-    }
-  }, [isFocused]);
   
   const categories = ['All', 'Breakfast', 'Lunch', 'Dinner'];
   
@@ -98,33 +90,6 @@ const MyFoodScreen = () => {
 
   const handleFoodItemPress = (foodItem) => {
     navigation.navigate('ChefFoodDetails', { foodItem });
-  };
-  
-  const handleTabPress = (tabName) => {
-    setActiveTab(tabName);
-    if (tabName === 'home') {
-      // Use navigate and reset to prevent adding new instances to the stack
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'SellerDashboard' }],
-        })
-      );
-    } else if (tabName === 'add') {
-      // Navigate to add new items screen
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'AddNewItemsScreen'
-        })
-      );
-    } else if (tabName === 'profile') {
-      // Navigate to the profile screen
-      navigation.navigate('ProfileScreen');
-    } else if (tabName === 'notifications') {
-      // Navigate to the notifications screen
-      navigation.navigate('NotificationScreen');
-    }
-    // Implement other tab navigations as needed
   };
 
   return (
@@ -174,60 +139,6 @@ const MyFoodScreen = () => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
       />
-      
-      {/* Bottom Tab */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('home')}
-        >
-          <MaterialCommunityIcons 
-            name="view-grid-outline" 
-            size={24} 
-            color={activeTab === 'home' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('menu')}
-        >
-          <Feather 
-            name="menu" 
-            size={24} 
-            color={activeTab === 'menu' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => handleTabPress('add')}
-        >
-          <Feather name="plus" size={24} color="#FB6D3A" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('notifications')}
-        >
-          <Ionicons 
-            name="notifications-outline" 
-            size={24} 
-            color={activeTab === 'notifications' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('profile')}
-        >
-          <Feather 
-            name="user" 
-            size={24} 
-            color={activeTab === 'profile' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -297,8 +208,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   listContainer: {
+    paddingVertical: 16,
     paddingHorizontal: 24,
-    paddingBottom: 100,
+    paddingBottom: 120, // Extra space for bottom tab
   },
   foodItem: {
     flexDirection: 'row',
@@ -370,42 +282,6 @@ const styles = StyleSheet.create({
     fontSize: 13.6,
     color: '#AFAFAF',
     textAlign: 'right',
-  },
-  tabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 89,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    paddingBottom: 20,
-  },
-  tabItem: {
-    width: 25,
-    height: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButton: {
-    width: 57,
-    height: 57,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFF1F1',
-    borderWidth: 1,
-    borderColor: '#FF7621',
-    borderRadius: 28.5,
-    marginBottom: 20,
   },
 });
 

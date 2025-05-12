@@ -6,7 +6,8 @@ import {
   ScrollView, 
   Image, 
   TouchableOpacity, 
-  StatusBar 
+  StatusBar,
+  Alert 
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
@@ -16,6 +17,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import RunningOrdersScreen from './RunningOrdersScreen';
+import { AsyncStorage } from '../../services/api';
+import api from '../../services/api';
 
 // Custom Chart Component (simplified for this implementation)
 const RevenueChart = () => {
@@ -59,12 +62,68 @@ const SellerDashboard = () => {
   const isFocused = useIsFocused();
   const [showRunningOrders, setShowRunningOrders] = useState(false);
   const [showOrderRequests, setShowOrderRequests] = useState(false);
-  const [activeTab, setActiveTab] = useState('home'); // Default active tab
+  const [restaurantInfo, setRestaurantInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [runningOrders, setRunningOrders] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
   
-  // Reset active tab when screen comes into focus
+  // Fetch restaurant info
   useEffect(() => {
+    const fetchRestaurantInfo = async () => {
+      try {
+        setIsLoading(true);
+        // Check if token exists
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          console.log('No token found, redirecting to login');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          });
+          return;
+        }
+        
+        // Lấy thông tin từ server
+        const response = await api.restaurant.getProfile();
+        
+        if (response.success) {
+          setRestaurantInfo(response.data);
+          console.log('Restaurant info loaded:', response.data.name || response.data.restaurant_name);
+          
+          // Hiển thị thông báo nếu đang dùng dữ liệu offline
+          if (response.isOffline) {
+            Alert.alert(
+              'Chế độ Offline', 
+              'Không thể kết nối tới máy chủ. Ứng dụng đang hiển thị dữ liệu đã lưu trước đó hoặc dữ liệu mẫu.',
+              [{ text: 'Đã hiểu', style: 'default' }]
+            );
+          }
+          
+          // Tạm thời đặt số đơn hàng cứng, sau sẽ cập nhật từ API
+          setRunningOrders(20);
+          setPendingOrders(5);
+        } else {
+          // Nếu API không thành công, thử lấy từ AsyncStorage
+          const userString = await AsyncStorage.getItem('user');
+          if (userString) {
+            const user = JSON.parse(userString);
+            setRestaurantInfo(user);
+            console.log('Restaurant info loaded from storage:', user);
+          } else {
+            throw new Error('Không thể tải thông tin nhà hàng');
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error fetching restaurant info:', error);
+        Alert.alert('Lỗi', 'Không thể tải thông tin nhà hàng. Vui lòng kiểm tra kết nối mạng và thử lại.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
     if (isFocused) {
-      setActiveTab('home');
+      fetchRestaurantInfo();
     }
   }, [isFocused]);
   
@@ -75,47 +134,6 @@ const SellerDashboard = () => {
   const handleToggleOrderRequests = () => {
     // Implement order requests modal when created
     console.log('Toggle order requests');
-  };
-  
-  const handleNavigateToMyFood = () => {
-    setActiveTab('menu');
-    navigation.navigate('MyFoodScreen');
-  };
-  
-  const handleNavigateToAddNewItems = () => {
-    setActiveTab('add');
-    // Use CommonActions.navigate to prevent stack issues
-    navigation.dispatch(
-      CommonActions.navigate({
-        name: 'AddNewItemsScreen'
-      })
-    );
-  };
-
-  const handleTabPress = (tabName) => {
-    setActiveTab(tabName);
-    if (tabName === 'home') {
-      // Use navigate and reset to prevent adding new instances to the stack
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'SellerDashboard' }],
-        })
-      );
-    } else if (tabName === 'add') {
-      // Navigate to add new items screen
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: 'AddNewItemsScreen'
-        })
-      );
-    } else if (tabName === 'menu') {
-      navigation.navigate('MyFoodScreen');
-    } else if (tabName === 'profile') {
-      navigation.navigate('ProfileScreen');
-    } else if (tabName === 'notifications') {
-      navigation.navigate('NotificationScreen');
-    }
   };
 
   return (
@@ -129,158 +147,124 @@ const SellerDashboard = () => {
         </TouchableOpacity>
         
         <View style={styles.locationContainer}>
-          <Text style={styles.locationLabel}>LOCATION</Text>
+          <Text style={styles.locationLabel}>NHÀ HÀNG</Text>
           <View style={styles.locationWrapper}>
-            <Text style={styles.locationText}>Halal Lab office</Text>
+            <Text style={styles.locationText}>
+              {restaurantInfo ? restaurantInfo.restaurant_name || restaurantInfo.name : 'Đang tải...'}
+            </Text>
             <Ionicons name="chevron-down-sharp" size={8} color="#676767" style={{marginLeft: 8, marginTop: 5}} />
           </View>
         </View>
         
-        <View style={styles.profileImage} />
+        <TouchableOpacity 
+          style={styles.profileImage}
+          onPress={() => navigation.navigate('ProfileScreen')}
+        />
       </View>
       
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Running Orders and Order Requests */}
-        <View style={styles.statsContainer}>
-          <TouchableOpacity 
-            style={styles.statsCard}
-            onPress={handleToggleRunningOrders}
-          >
-            <Text style={styles.statsNumber}>20</Text>
-            <Text style={styles.statsLabel}>RUNNING ORDERS</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.statsCard}
-            onPress={handleToggleOrderRequests}
-          >
-            <Text style={styles.statsNumber}>05</Text>
-            <Text style={styles.statsLabel}>ORDER REQUEST</Text>
-          </TouchableOpacity>
+      {isLoading ? (
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <Text>Đang tải thông tin...</Text>
         </View>
-        
-        {/* Revenue Card */}
-        <View style={styles.revenueCard}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>Total Revenue</Text>
-              <Text style={styles.revenueAmount}>$2,241</Text>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Restaurant Status Summary */}
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>
+              Xin chào, {restaurantInfo?.restaurant_name || restaurantInfo?.name || 'Nhà hàng'}!
+            </Text>
+            <Text style={styles.statusText}>
+              Trạng thái: <Text style={{color: '#4CAF50', fontWeight: 'bold'}}>Đang mở cửa</Text>
+            </Text>
+          </View>
+
+          {/* Running Orders and Order Requests */}
+          <View style={styles.statsContainer}>
+            <TouchableOpacity 
+              style={styles.statsCard}
+              onPress={handleToggleRunningOrders}
+            >
+              <Text style={styles.statsNumber}>{runningOrders}</Text>
+              <Text style={styles.statsLabel}>RUNNING ORDERS</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.statsCard}
+              onPress={handleToggleOrderRequests}
+            >
+              <Text style={styles.statsNumber}>{pendingOrders}</Text>
+              <Text style={styles.statsLabel}>ORDER REQUEST</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Revenue Card */}
+          <View style={styles.revenueCard}>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTitle}>Total Revenue</Text>
+                <Text style={styles.revenueAmount}>$2,241</Text>
+              </View>
+              
+              <View style={styles.headerRight}>
+                <TouchableOpacity style={styles.periodSelector}>
+                  <Text style={styles.periodText}>Daily</Text>
+                  <Ionicons name="chevron-down" size={14} color="#9B9BA5" />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <Text style={styles.seeDetails}>See Details</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             
-            <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.periodSelector}>
-                <Text style={styles.periodText}>Daily</Text>
-                <Ionicons name="chevron-down" size={14} color="#9B9BA5" />
-              </TouchableOpacity>
+            <RevenueChart />
+          </View>
+          
+          {/* Reviews Card */}
+          <View style={styles.reviewsCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Reviews</Text>
               <TouchableOpacity>
-                <Text style={styles.seeDetails}>See Details</Text>
+                <Text style={styles.seeAll}>See All Reviews</Text>
               </TouchableOpacity>
             </View>
-          </View>
-          
-          <RevenueChart />
-        </View>
-        
-        {/* Reviews Card */}
-        <View style={styles.reviewsCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Reviews</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>See All Reviews</Text>
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.reviewStats}>
-            <View style={styles.ratingContainer}>
-              <View style={{
-                width: 26,
-                height: 26,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <FontAwesome name="star" size={18} color="#FB6D3A" />
+            
+            <View style={styles.reviewStats}>
+              <View style={styles.ratingContainer}>
+                <View style={{
+                  width: 26,
+                  height: 26,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                  <FontAwesome name="star" size={18} color="#FB6D3A" />
+                </View>
+                <Text style={styles.ratingText}>4.9</Text>
               </View>
-              <Text style={styles.ratingText}>4.9</Text>
+              <Text style={styles.totalReviews}>Total 20 Reviews</Text>
             </View>
-            <Text style={styles.totalReviews}>Total 20 Reviews</Text>
-          </View>
-        </View>
-        
-        {/* Popular Items Card */}
-        <View style={styles.popularItemsCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Populer Items This Weeks</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
           </View>
           
-          <View style={styles.itemsContainer}>
-            <View style={styles.itemImage} />
-            <View style={styles.itemImage} />
+          {/* Popular Items Card */}
+          <View style={styles.popularItemsCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Populer Items This Weeks</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAll}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.itemsContainer}>
+              <View style={styles.itemImage} />
+              <View style={styles.itemImage} />
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      )}
       
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('home')}
-        >
-          <MaterialCommunityIcons 
-            name="view-grid-outline" 
-            size={24} 
-            color={activeTab === 'home' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('menu')}
-        >
-          <Feather 
-            name="menu" 
-            size={24} 
-            color={activeTab === 'menu' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => handleTabPress('add')}
-        >
-          <Feather name="plus" size={24} color="#FB6D3A" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('notifications')}
-        >
-          <Ionicons 
-            name="notifications-outline" 
-            size={24} 
-            color={activeTab === 'notifications' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.tabItem}
-          onPress={() => handleTabPress('profile')}
-        >
-          <Feather 
-            name="user" 
-            size={24} 
-            color={activeTab === 'profile' ? '#FB6D3A' : '#32343E'} 
-          />
-        </TouchableOpacity>
-      </View>
-      
-      {/* Running Orders Modal */}
-      <RunningOrdersScreen 
-        visible={showRunningOrders} 
-        onClose={() => setShowRunningOrders(false)} 
-      />
+      {/* Display running orders modal if needed */}
+      {showRunningOrders && (
+        <RunningOrdersScreen onClose={handleToggleRunningOrders} />
+      )}
     </SafeAreaView>
   );
 };

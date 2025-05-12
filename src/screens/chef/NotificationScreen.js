@@ -37,44 +37,10 @@ const NotificationItem = ({ userName, action, time }) => {
 
 const NotificationScreen = () => {
   const isFocused = useIsFocused();
-  const [activeTab, setActiveTab] = useState("menu");
   const navigation = useNavigation();
 
   const handleBack = () => {
     navigation.goBack();
-  };
-
-  useEffect(() => {
-    if (isFocused) {
-      setActiveTab("menu");
-    }
-  }, [isFocused]);
-
-  const handleTabPress = (tabName) => {
-    setActiveTab(tabName);
-    if (tabName === "home") {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: "SellerDashboard" }],
-        })
-      );
-    } else if (tabName === "menu") {
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: "MyFoodScreen",
-        })
-      );
-    } else if (tabName === "add") {
-      navigation.dispatch(
-        CommonActions.navigate({
-          name: "AddNewItemsScreen",
-        })
-      );
-    } else if (tabName === "profile") {
-      navigation.navigate("ProfileScreen");
-    }
-    // Already on notifications
   };
 
   return (
@@ -121,45 +87,6 @@ const NotificationScreen = () => {
           time="20 min ago"
         />
       </ScrollView>
-
-      {/* Bottom Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => handleTabPress("home")}
-        >
-          <MaterialCommunityIcons
-            name="view-grid-outline"
-            size={24}
-            color="#32343E"
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => handleTabPress("menu")}
-        >
-          <Feather name="menu" size={24} color="#32343E" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => handleTabPress("add")}
-        >
-          <Feather name="plus" size={24} color="#FB6D3A" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="notifications-outline" size={24} color="#FB6D3A" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.tabItem}
-          onPress={() => handleTabPress("profile")}
-        >
-          <Feather name="user" size={24} color="#32343E" />
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -236,37 +163,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#F0F4F9",
     width: "100%",
-  },
-  tabBar: {
-    flexDirection: "row",
-    height: 89,
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    paddingBottom: 20,
-    justifyContent: "space-around",
-    alignItems: "center",
-  },
-  tabItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 40,
-  },
-  addButton: {
-    width: 57,
-    height: 57,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFF1F1",
-    borderWidth: 1,
-    borderColor: "#FF7621",
-    borderRadius: 28.5,
-    marginBottom: 20,
   },
 });
 

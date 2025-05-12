@@ -21,6 +21,13 @@ import EditProfileScreen from '../screens/info/EditProfileScreen';
 import MenuScreen from '../screens/home/MenuScreen';
 import MyOrdersScreen from '../screens/home/MyOrdersScreen';
 
+// Import screens from nhánh Linh
+import SearchScreen from '../screens/home/SearchScreen';
+import RestaurantViewScreen from '../screens/home/RestaurantViewScreen';
+import FilterScreen from '../screens/home/FilterScreen';
+import FoodSearchScreen from '../screens/home/FoodSearchScreen';
+import FoodDetailsScreen from '../screens/home/FoodDetailsScreen';
+
 // Import restaurant screens
 import SellerDashboard from '../screens/chef/SellerDashboard';
 import MyFoodScreen from '../screens/chef/MyFoodScreen';
@@ -119,6 +126,13 @@ const AppNavigator = () => {
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Auth" component={AuthNavigator} />
+        
+        {/* Screens từ nhánh Linh */}
+        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="RestaurantView" component={RestaurantViewScreen} />
+        <Stack.Screen name="FoodSearch" component={FoodSearchScreen} />
+        <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
+        <Stack.Screen name="Filter" component={FilterScreen} />
         
         {/* Customer screens */}
         <Stack.Screen name="Home" component={HomeScreen} />

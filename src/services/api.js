@@ -6,7 +6,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Base URL cho API calls - sử dụng biến môi trường hoặc fallback URL
+<<<<<<< HEAD
 const BASE_URL = process.env.API_URL || 'http://192.168.31.133:3001';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
+=======
+const BASE_URL = process.env.API_URL || 'http://192.168.10.104:4000';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
+>>>>>>> 09f5647a111bcb4857ce32a267bf2ba3c7a97764
 
 // Log API URL
 console.log('Using API URL:', BASE_URL);

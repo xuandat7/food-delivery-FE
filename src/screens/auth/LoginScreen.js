@@ -105,6 +105,7 @@ const LoginScreen = () => {
             });
           } else {
             console.log('Navigating to customer home...');
+            // Chuyển sang màn hình Search từ nhánh Linh nếu là khách hàng
             navigation.reset({
               index: 0,
               routes: [{ name: 'Home' }],

@@ -38,7 +38,7 @@ const ProfileScreen = () => {
   };
 
   const handlePersonalInfo = () => {
-    Alert.alert('Personal Info', 'Personal Info screen will be available soon');
+    navigation.navigate('PersonalInfo');
   };
 
   const handleSettings = () => {

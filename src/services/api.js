@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Base URL cho API calls - sử dụng biến môi trường hoặc fallback URL
-const BASE_URL = process.env.API_URL || 'http://192.168.1.45:4000';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
+const BASE_URL = process.env.API_URL || 'http://192.168.10.104:4000';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
 
 // Log API URL
 console.log('Using API URL:', BASE_URL);
@@ -226,6 +226,11 @@ export const userAPI = {
         throw new Error(data.message || 'Failed to fetch profile');
       }
       
+      // Đảm bảo data có trường full_name nếu server trả về fullName
+      if (data.fullName && !data.full_name) {
+        data.full_name = data.fullName;
+      }
+      
       return { success: true, message: 'Profile fetched successfully', data: data };
     } catch (error) {
       console.error('Profile request error:', error);
@@ -242,38 +247,39 @@ export const userAPI = {
   updateProfile: async (id, userData) => {
     try {
       const token = await AsyncStorage.getItem('token') || '';
-      const formData = new FormData();
       
-      // Add text fields
-      if (userData.full_name) formData.append('full_name', userData.full_name);
-      if (userData.phone) formData.append('phone', userData.phone);
-      if (userData.address) formData.append('address', userData.address);
+      // Tạo đối tượng JSON với các trường cần thiết
+      const jsonData = {};
+      if (userData.full_name) jsonData.full_name = userData.full_name;
+      if (userData.phone) jsonData.phone = userData.phone;
+      if (userData.address) jsonData.address = userData.address;
       
-      // Add avatar if present
-      if (userData.avatar && userData.avatar.uri) {
-        const uriParts = userData.avatar.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
-        
-        formData.append('avatar', {
-          uri: userData.avatar.uri,
-          name: `avatar.${fileType}`,
-          type: `image/${fileType}`,
-        });
-      }
+      console.log('Attempting to update profile with JSON data:', JSON.stringify(jsonData));
       
+      // Gửi request JSON đơn giản (không có avatar)
       const response = await fetch(`${BASE_URL}/users/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
-          // Don't set Content-Type when sending FormData
+          'Content-Type': 'application/json',
         },
-        body: formData
+        body: JSON.stringify(jsonData)
       });
       
+      console.log('Profile update response status:', response.status);
       const data = await response.json();
+      console.log('Profile update response data:', JSON.stringify(data));
+      
       if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+      
+      // Đảm bảo data có trường full_name để UI hiển thị đúng
+      if (!data.full_name && data.fullName) {
+        data.full_name = data.fullName;
+      }
+      
       return { success: true, message: 'Profile updated successfully', data: data };
     } catch (error) {
+      console.error('Profile update error:', error);
       return handleError(error);
     }
   }

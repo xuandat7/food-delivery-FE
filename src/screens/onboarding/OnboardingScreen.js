@@ -7,10 +7,12 @@ import {
   SafeAreaView,
   Dimensions,
   Animated,
-  FlatList
+  FlatList,
+  Image
 } from 'react-native';
 import { COLORS, SIZES } from '../../constants/theme';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,25 +27,25 @@ const OnboardingScreen = () => {
       id: '1',
       title: 'Tất cả món ăn yêu thích',
       description: 'Đặt tất cả các món ăn bạn yêu thích ở một nơi,\nbạn chỉ cần đặt hàng, chúng tôi sẽ lo phần còn lại',
-      image: 'placeholder'
+      image: require('../../../assets/images/onboarding/food_favorites.png')
     },
     {
       id: '2',
       title: 'Ưu đãi giao hàng miễn phí',
       description: 'Giao hàng miễn phí cho khách hàng mới qua thẻ tín dụng',
-      image: 'placeholder'
+      image: require('../../../assets/images/onboarding/free_delivery.png')
     },
     {
       id: '3',
       title: 'Giao hàng nhanh chóng',
       description: 'Nhận đồ ăn của bạn trong vòng chưa đầy 30 phút',
-      image: 'placeholder'
+      image: require('../../../assets/images/onboarding/fast_delivery.png')
     },
     {
       id: '4',
       title: 'Thanh toán dễ dàng',
       description: 'Thanh toán đồ ăn bằng thẻ tín dụng, Apple Pay, hoặc tiền mặt',
-      image: 'placeholder'
+      image: require('../../../assets/images/onboarding/easy_payment.png')
     }
   ];
 
@@ -64,17 +66,33 @@ const OnboardingScreen = () => {
     completeOnboarding();
   };
 
-  const completeOnboarding = () => {
-    // Navigate to Auth stack instead of using onComplete callback
-    navigation.navigate('Auth');
+  const completeOnboarding = async () => {
+    try {
+      // Đặt firstLaunch vào AsyncStorage khi người dùng hoàn thành onboarding
+      await AsyncStorage.setItem('firstLaunch', 'false');
+      console.log('Onboarding completed, firstLaunch set to false in storage');
+      // Navigate to Auth stack instead of using onComplete callback
+      navigation.navigate('Auth');
+    } catch (error) {
+      console.error('Error saving firstLaunch value:', error);
+      navigation.navigate('Auth');
+    }
   };
 
   const renderItem = ({ item, index }) => {
     return (
       <View style={styles.slideContainer}>
-        {/* Image Placeholder */}
+        {/* Image */}
         <View style={styles.imageContainer}>
-          <View style={styles.image} />
+          {typeof item.image === 'string' ? (
+            <View style={styles.imagePlaceholder} />
+          ) : (
+            <Image 
+              source={item.image} 
+              style={styles.image}
+              resizeMode="contain"
+            />
+          )}
         </View>
 
         {/* Title */}
@@ -156,13 +174,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageContainer: {
-    marginTop: 114,
+    marginTop: 80,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 280,
+    height: 280,
   },
   image: {
+    width: '100%',
+    height: '100%',
+    borderRadius: SIZES.buttonRadius,
+  },
+  imagePlaceholder: {
     width: 240,
-    height: 292,
+    height: 240,
     backgroundColor: COLORS.placeholderImage,
     borderRadius: SIZES.buttonRadius,
   },
@@ -170,7 +195,7 @@ const styles = StyleSheet.create({
     fontSize: SIZES.xxl,
     fontWeight: '800',
     color: COLORS.secondary,
-    marginTop: 62,
+    marginTop: 40,
     textAlign: 'center',
   },
   description: {
@@ -178,7 +203,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    marginTop: 23,
+    marginTop: 16,
     paddingHorizontal: 25,
   },
   paginationContainer: {

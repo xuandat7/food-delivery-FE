@@ -7,23 +7,22 @@ import { Ionicons } from '@expo/vector-icons';
 
 const profileData = {
   name: 'Vishal Khadok',
-  desc: 'I love fast food',
   // avatar: require('../../../assets/profile-avatar.png'), // Để trống, thêm sau
 };
 
 const menuItems = [
   {
     section: [
-      { label: 'Personal Info' },
-      { label: 'Addresses' },
+      { label: 'Personal Info', icon: 'person-outline' },
+      { label: 'Addresses', icon: 'location-outline' },
     ],
   },
   {
     section: [
-      { label: 'Cart' },
-      { label: 'Favourite' },
-      { label: 'Notifications' },
-      { label: 'Payment Method' },
+      { label: 'Cart', icon: 'cart-outline' },
+      { label: 'Favourite', icon: 'heart-outline' },
+      { label: 'Notifications', icon: 'notifications-outline' },
+      { label: 'Payment Method', icon: 'card-outline' },
     ],
   },
 ];
@@ -128,13 +127,11 @@ export default function MenuScreen() {
     <View style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.circleBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.circleBtn} onPress={() => navigation.navigate('Home')}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.profileTitle}>Menu</Text>
-        <TouchableOpacity style={styles.circleBtn}>
-          <View style={styles.iconPlaceholder} />
-        </TouchableOpacity>
+        <View style={{ width: 45 }} />
       </View>
 
       {/* Profile info */}
@@ -160,13 +157,24 @@ export default function MenuScreen() {
         <View style={styles.menuSection}>
           {/* Section 1 */}
           <View style={styles.menuGroup}>
-            <MenuItem label={menuItems[0].section[0].label} onPress={() => navigation.navigate('PersonalInfo', { userData })} />
-            <MenuItem label={menuItems[0].section[1].label} />
+            <MenuItem 
+              label={menuItems[0].section[0].label} 
+              icon={menuItems[0].section[0].icon}
+              onPress={() => navigation.navigate('PersonalInfo', { userData })} 
+            />
+            <MenuItem 
+              label={menuItems[0].section[1].label} 
+              icon={menuItems[0].section[1].icon}
+            />
           </View>
           {/* Section 2 */}
           <View style={styles.menuGroup}>
             {menuItems[1].section.map((item, idx) => (
-              <MenuItem key={item.label} label={item.label} />
+              <MenuItem 
+                key={item.label} 
+                label={item.label} 
+                icon={item.icon}
+              />
             ))}
           </View>
         </View>
@@ -187,14 +195,14 @@ export default function MenuScreen() {
   );
 }
 
-function MenuItem({ label, onPress }) {
+function MenuItem({ label, icon, onPress }) {
   return (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <View style={styles.menuIconWrapper}>
-        <View style={styles.menuIconPlaceholder} />
+        <Ionicons name={icon || 'options-outline'} size={20} color="#ff7621" />
       </View>
       <Text style={styles.menuLabel}>{label}</Text>
-      <View style={styles.chevronPlaceholder} />
+      <Ionicons name="chevron-forward" size={20} color="#A0A0A0" />
     </TouchableOpacity>
   );
 }
@@ -293,23 +301,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 14,
   },
-  menuIconPlaceholder: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#e0e0e0',
-  },
   menuLabel: {
     flex: 1,
     fontSize: 16,
     color: '#32343e',
     fontWeight: '400',
-  },
-  chevronPlaceholder: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#e0e0e0',
   },
   logoutBtn: {
     backgroundColor: '#f6f8fa',

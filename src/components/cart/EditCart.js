@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Nếu bạn dùng Expo, hoặc dùng react-native-vector-icons
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 
 const EditCart = () => {
   // State for cart items
@@ -27,6 +27,28 @@ const EditCart = () => {
   const [addressInput, setAddressInput] = useState(address);
   const [editMode, setEditMode] = useState(false);
   const navigation = useNavigation();
+  const route = useRoute();
+
+  // Reset cart nếu nhận được params resetCart
+  useFocusEffect(
+    React.useCallback(() => {
+      if (route.params && route.params.resetCart) {
+        setCartItems([]);
+      }
+      // Thêm sản phẩm nếu có param addItem
+      if (route.params && route.params.addItem) {
+        setCartItems(items => {
+          // Nếu sản phẩm đã có trong giỏ thì tăng qty, nếu chưa thì thêm mới
+          const exists = items.find(i => i.id === route.params.addItem.id);
+          if (exists) {
+            return items.map(i => i.id === route.params.addItem.id ? { ...i, qty: i.qty + 1 } : i);
+          } else {
+            return [...items, route.params.addItem];
+          }
+        });
+      }
+    }, [route.params])
+  );
 
   // Quantity handlers
   const handleQtyChange = (id, delta) => {
@@ -51,6 +73,10 @@ const EditCart = () => {
   const handleSaveAddress = () => {
     setAddress(addressInput);
     setEditingAddress(false);
+  };
+
+  const handlePlaceOrder = () => {
+    navigation.navigate('PaymentMethod', { total });
   };
 
   return (
@@ -140,7 +166,7 @@ const EditCart = () => {
             <Text style={styles.totalValue}>${total}</Text>
             {/* <TouchableOpacity><Text style={styles.breakdown}>Breakdown</Text></TouchableOpacity> */}
           </View>
-          <TouchableOpacity style={styles.placeOrderBtn}>
+          <TouchableOpacity style={styles.placeOrderBtn} onPress={handlePlaceOrder}>
             <Text style={styles.placeOrderText}>PLACE ORDER</Text>
           </TouchableOpacity>
         </View>

@@ -18,6 +18,7 @@ import HomeScreen from '../screens/home/HomeScreen';
 import ProfileScreen from '../screens/home/ProfileScreen';
 import PersonalInfoScreen from '../screens/info/PersonalInfoScreen';
 import MenuScreen from '../screens/home/MenuScreen';
+import MyOrdersScreen from '../screens/home/MyOrdersScreen';
 
 // Import restaurant screens
 import SellerDashboard from '../screens/chef/SellerDashboard';
@@ -27,6 +28,8 @@ import NotificationScreen from '../screens/chef/NotificationScreen';
 import ChefProfileScreen from '../screens/chef/ProfileScreen';
 
 import EditCart from '../components/cart/EditCart.js'; // Đảm bảo bạn có file EditCart.js đúng chuẩn React Native hoặc React
+import PaymentMethodScreen from '../components/payment/PaymentMethodScreen.js';
+import PaymentSuccessScreen from '../components/payment/PaymentSuccessScreen';
 
 // Create stack navigators
 const Stack = createNativeStackNavigator();
@@ -105,10 +108,13 @@ const AppNavigator = () => {
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
         <Stack.Screen name="Menu" component={MenuScreen} />
+        <Stack.Screen name="MyOrdersScreen" component={MyOrdersScreen} />
         
         {/* Restaurant screens */}
         <Stack.Screen name="RestaurantTabs" component={RestaurantTabNavigator} />
         <Stack.Screen name="EditCart" component={EditCart} />
+        <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
+        <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

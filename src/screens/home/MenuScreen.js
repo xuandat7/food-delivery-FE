@@ -4,6 +4,7 @@ import { COLORS } from '../../constants/theme';
 import { useNavigation } from '@react-navigation/native';
 import api, { AsyncStorage } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import EditCart from '../../components/cart/EditCart';
 
 const profileData = {
   name: 'Vishal Khadok',
@@ -20,7 +21,8 @@ const menuItems = [
   },
   {
     section: [
-      { label: 'Cart' },
+      { label: 'Cart', onPress: (navigation) => navigation.navigate('EditCart') },
+      { label: 'My Orders', onPress: (navigation) => navigation.navigate('MyOrdersScreen') },
       { label: 'Favourite' },
       { label: 'Notifications' },
       { label: 'Payment Method' },
@@ -166,7 +168,7 @@ export default function MenuScreen() {
           {/* Section 2 */}
           <View style={styles.menuGroup}>
             {menuItems[1].section.map((item, idx) => (
-              <MenuItem key={item.label} label={item.label} />
+              <MenuItem key={item.label} label={item.label} onPress={item.onPress} />
             ))}
           </View>
         </View>
@@ -188,8 +190,9 @@ export default function MenuScreen() {
 }
 
 function MenuItem({ label, onPress }) {
+  const navigation = useNavigation();
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+    <TouchableOpacity style={styles.menuItem} onPress={() => onPress && onPress(navigation)}>
       <View style={styles.menuIconWrapper}>
         <View style={styles.menuIconPlaceholder} />
       </View>
@@ -354,4 +357,4 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
   },
-}); 
+});

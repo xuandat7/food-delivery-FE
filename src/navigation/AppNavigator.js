@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { AsyncStorage } from '../services/api';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -25,6 +25,8 @@ import MyFoodScreen from '../screens/chef/MyFoodScreen';
 import AddNewItemsScreen from '../screens/chef/AddNewItemsScreen';
 import NotificationScreen from '../screens/chef/NotificationScreen';
 import ChefProfileScreen from '../screens/chef/ProfileScreen';
+
+import EditCart from '../components/cart/EditCart.js'; // Đảm bảo bạn có file EditCart.js đúng chuẩn React Native hoặc React
 
 // Create stack navigators
 const Stack = createNativeStackNavigator();
@@ -106,6 +108,7 @@ const AppNavigator = () => {
         
         {/* Restaurant screens */}
         <Stack.Screen name="RestaurantTabs" component={RestaurantTabNavigator} />
+        <Stack.Screen name="EditCart" component={EditCart} />
       </Stack.Navigator>
     </NavigationContainer>
   );

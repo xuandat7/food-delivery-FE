@@ -69,7 +69,7 @@ const HomeScreen = () => {
               </View>
             </View>
           </View>
-          <TouchableOpacity className="relative">
+          <TouchableOpacity className="relative" onPress={() => navigation.navigate('EditCart')}>
             <View className="bg-[#0D182E] rounded-full w-11 h-11 items-center justify-center">
               <Ionicons name="cart-outline" size={24} color="white" />
             </View>
@@ -120,4 +120,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
 });
-export default HomeScreen; 
+export default HomeScreen;

@@ -47,13 +47,16 @@ const AppNavigator = () => {
     // Initialize app - check authentication and first launch status
     const initialize = async () => {
       try {
-        // Bỏ lệnh xóa firstLaunch để không bắt buộc hiển thị onboarding mỗi lần
-        // Chỉ hiển thị onboarding khi thực sự là lần đầu
-
         // Check if token exists
         const token = await AsyncStorage.getItem('token');
         console.log('Initial token check:', token);
         setUserToken(token);
+        
+        // Nếu không có token, xóa firstLaunch để hiển thị onboarding
+        if (!token) {
+          await AsyncStorage.removeItem('firstLaunch');
+          console.log('Không có token, xóa firstLaunch để hiển thị onboarding');
+        }
         
         // Check user type
         const type = await AsyncStorage.getItem('userType');

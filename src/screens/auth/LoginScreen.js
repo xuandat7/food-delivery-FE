@@ -75,10 +75,11 @@ const LoginScreen = () => {
         console.log('Login response:', response);
         
         if (response.success) {
-          // Store token in AsyncStorage
-          if (response.data.access_token) {
-            await AsyncStorage.setItem('token', response.data.access_token);
-            console.log('Token stored in AsyncStorage:', response.data.access_token);
+          // Lấy token từ nhiều trường khác nhau
+          const token = response.data.access_token || response.data.token || response.data.jwt;
+          if (token) {
+            await AsyncStorage.setItem('token', token);
+            console.log('Token stored in AsyncStorage:', token);
             
             // Store user info if available
             if (response.data.user) {
@@ -90,7 +91,9 @@ const LoginScreen = () => {
             await AsyncStorage.setItem('userType', isRestaurant ? 'restaurant' : 'customer');
             console.log('User type stored:', isRestaurant ? 'restaurant' : 'customer');
           } else {
-            console.error('No access_token found in login response', response.data);
+            console.error('Không tìm thấy token trong phản hồi đăng nhập', response.data);
+            Alert.alert('Lỗi', 'Không tìm thấy token trong phản hồi đăng nhập. Vui lòng thử lại hoặc liên hệ hỗ trợ.');
+            return;
           }
           
           // Navigate to appropriate screen based on user type

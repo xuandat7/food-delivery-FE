@@ -9,7 +9,7 @@ import { HeyHalalGood } from "../../components/home/HeyHalalGood";
 import { Restaurant } from "../../components/home/Restaurant";
 import { RestaurantWrapper } from "../../components/home/RestaurantWrapper";
 import { FontAwesome, Ionicons, Entypo } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useState, useEffect } from 'react';
 import { StyleSheet, ActivityIndicator } from "react-native"; // Thêm ActivityIndicator vào import
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +20,7 @@ const HomeScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userName, setUserName] = useState(""); // State để lưu tên người dùng
   const [greeting, setGreeting] = useState(""); // State để lưu lời chào theo thời gian
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     // Kiểm tra token khi component được mount
@@ -59,6 +60,50 @@ const HomeScreen = () => {
 
     checkTokenAndUserInfo();
   }, []);
+
+  // Fetch cart count
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      try {
+        const res = await api.getCart();
+        if (res.success && res.data && Array.isArray(res.data.items)) {
+          setCartCount(res.data.totalItems || 0);
+        } else {
+          setCartCount(0);
+        }
+      } catch (e) {
+        setCartCount(0);
+      }
+    };
+    fetchCartCount();
+  }, []);
+
+  // Fetch cart count mỗi khi HomeScreen được focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchCartCount = async () => {
+        try {
+          const res = await api.getCart();
+          if (res.success && res.data && Array.isArray(res.data.items)) {
+            setCartCount(res.data.totalItems || 0);
+          } else {
+            setCartCount(0);
+          }
+        } catch (e) {
+          setCartCount(0);
+        }
+      };
+      fetchCartCount();
+      // If resetCart param is set, refetch cart count
+      if (navigation && navigation.getState) {
+        const state = navigation.getState();
+        const currentRoute = state.routes[state.index];
+        if (currentRoute && currentRoute.params && currentRoute.params.resetCart) {
+          fetchCartCount();
+        }
+      }
+    }, [navigation])
+  );
 
   // Hàm lấy thông tin người dùng
   const fetchUserInfo = async () => {
@@ -131,7 +176,7 @@ const HomeScreen = () => {
               <Ionicons name="cart-outline" size={24} color="white" />
             </View>
             <View className="absolute top-0 right-0 bg-[#FF6B00] rounded-full w-5 h-5 items-center justify-center">
-              <Text className="text-white text-xs font-bold">2</Text>
+              <Text className="text-white text-xs font-bold">{cartCount}</Text>
             </View>
           </TouchableOpacity>
         </View>

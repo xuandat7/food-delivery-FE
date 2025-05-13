@@ -2,13 +2,31 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import api from '../../services/api';
 
 const DishDetailScreen = ({ route, navigation }) => {
   const { dish } = route.params;
 
-  const handleAddToCart = () => {
-    // Implement add to cart functionality
-    alert('Đã thêm vào giỏ hàng!');
+  const handleAddToCart = async () => {
+    try {
+      // Gọi API thêm vào giỏ hàng
+      const res = await fetch(`http://localhost:3001/cart/${dish.id}?quantity=1`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Đã thêm vào giỏ hàng!');
+        console.log('Thêm vào giỏ hàng thành công:', data);
+        // Có thể cập nhật lại badge cart ở Home nếu muốn
+
+      } else {
+        alert(data.message || 'Thêm vào giỏ hàng thất bại!');
+      }
+    } catch (error) {
+      alert('Lỗi khi thêm vào giỏ hàng!');
+      console.error(error);
+    }
   };
 
   return (
@@ -143,4 +161,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default DishDetailScreen; 
+export default DishDetailScreen;

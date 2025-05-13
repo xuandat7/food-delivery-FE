@@ -69,7 +69,7 @@ const PaymentMethodScreen = () => {
       <View style={styles.bottomSection}>
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>TỔNG:</Text>
-          <Text style={styles.totalValue}>${total}</Text>
+          <Text style={styles.totalValue}>{new Intl.NumberFormat('vi-VN').format(total)} đ</Text>
         </View>
         <TouchableOpacity style={styles.payBtn} onPress={handlePay}>
           <Text style={styles.payBtnText}>THANH TOÁN & XÁC NHẬN</Text>

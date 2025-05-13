@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import api from '../../services/api';
 
 const PaymentSuccessScreen = () => {
   const navigation = useNavigation();
+
+  // Clear cart on mount after payment success
+  useEffect(() => {
+    const resetCartAndNotify = async () => {
+      try {
+        await api.createOrder();
+        // Optionally, you could show a toast or notification here
+      } catch (e) {
+        // Optionally handle error
+      }
+    };
+    resetCartAndNotify();
+  }, []);
 
   // Chặn back gesture hoặc back vật lý, nhưng cho phép nhấn nút QUAY LẠI TRANG CHỦ
   useFocusEffect(

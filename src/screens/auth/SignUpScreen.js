@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,10 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  SafeAreaView
+  SafeAreaView,
+  Keyboard,
+  UIManager,
+  findNodeHandle
 } from 'react-native';
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +42,74 @@ const SignUpScreen = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  
+  // Keyboard states
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Input refs
+  const nameRef = useRef(null);
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
+  const scrollViewRef = useRef(null);
+  
+  // Keyboard listeners to adjust scroll
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+  
+  // Handle focused input to ensure it's visible
+  const handleInputFocus = (fieldRef) => {
+    if (!fieldRef?.current) return;
+    
+    // Đảm bảo mã này chỉ chạy sau khi component đã render
+    setTimeout(() => {
+      const nodeHandle = findNodeHandle(fieldRef.current);
+      if (!nodeHandle) return;
+      
+      // Tính toán vị trí của ô nhập
+      UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
+        // Tính toán vị trí của đáy ô nhập
+        const inputBottom = pageY + height;
+        
+        // Tính toán vị trí đỉnh của bàn phím
+        const screenHeight = Dimensions.get('window').height;
+        const keyboardTop = screenHeight - keyboardHeight;
+        
+        // Thêm khoảng cách để dễ nhìn
+        const paddingForVisibility = 20;
+        
+        // Chỉ cuộn nếu ô nhập bị che bởi bàn phím
+        if (inputBottom + paddingForVisibility > keyboardTop) {
+          // Tính toán vị trí cần cuộn để hiển thị ô đang nhập
+          // Cuộn chính xác đến vị trí của ô nhập liệu, không phải cuộn phần còn thiếu
+          scrollViewRef.current?.scrollTo({ 
+            y: pageY - 100, // Cuộn ô nhập lên vị trí cách đỉnh màn hình 100px
+            animated: true 
+          });
+        }
+      });
+    }, 100);
+  };
   
   // Validation functions
   const validateName = (text) => {
@@ -181,6 +252,7 @@ const SignUpScreen = () => {
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+          enabled={Platform.OS === 'ios'}
         >
           {/* Content container */}
           <View style={{ flex: 1 }}>
@@ -199,7 +271,7 @@ const SignUpScreen = () => {
             </TouchableOpacity>
             
             {/* Top section */}
-            <View style={styles.topSection}>
+            <View style={[styles.topSection, keyboardVisible && styles.topSectionSmaller]}>
               <Text style={[styles.title, {color: theme.background}]}>
                 {isRestaurant ? 'Đăng Ký Nhà Hàng' : 'Đăng Ký'}
               </Text>
@@ -218,9 +290,11 @@ const SignUpScreen = () => {
             ]}>
               <ScrollView 
                 style={{ flex: 1 }}
-                contentContainerStyle={{ paddingBottom: 80 }}
+                contentContainerStyle={{ paddingBottom: keyboardVisible ? 200 : 80 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
+                ref={scrollViewRef}
               >
                 {/* Name input */}
                 <View style={styles.inputGroup}>
@@ -237,6 +311,10 @@ const SignUpScreen = () => {
                       placeholderTextColor={theme.placeholderText}
                       value={name}
                       onChangeText={validateName}
+                      ref={nameRef}
+                      returnKeyType="next"
+                      onSubmitEditing={() => emailRef.current?.focus()}
+                      onFocus={() => handleInputFocus(nameRef)}
                     />
                   </View>
                   {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
@@ -257,6 +335,10 @@ const SignUpScreen = () => {
                       value={email}
                       onChangeText={validateEmail}
                       autoCapitalize="none"
+                      ref={emailRef}
+                      returnKeyType="next"
+                      onSubmitEditing={() => passwordRef.current?.focus()}
+                      onFocus={() => handleInputFocus(emailRef)}
                     />
                   </View>
                   {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
@@ -276,6 +358,11 @@ const SignUpScreen = () => {
                       secureTextEntry={!showPassword}
                       value={password}
                       onChangeText={validatePassword}
+                      autoCapitalize="none"
+                      ref={passwordRef}
+                      returnKeyType="next"
+                      onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                      onFocus={() => handleInputFocus(passwordRef)}
                     />
                     <TouchableOpacity
                       style={styles.eyeIcon}
@@ -342,6 +429,11 @@ const SignUpScreen = () => {
                       secureTextEntry={!showConfirmPassword}
                       value={confirmPassword}
                       onChangeText={validateConfirmPassword}
+                      autoCapitalize="none"
+                      ref={confirmPasswordRef}
+                      returnKeyType="done"
+                      onSubmitEditing={handleSignUp}
+                      onFocus={() => handleInputFocus(confirmPasswordRef)}
                     />
                     <TouchableOpacity
                       style={styles.eyeIcon}
@@ -417,6 +509,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
+  },
+  topSectionSmaller: {
+    marginTop: 50,
+    marginBottom: 5,
   },
   title: {
     fontSize: 26,

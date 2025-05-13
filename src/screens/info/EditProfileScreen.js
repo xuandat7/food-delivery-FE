@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,11 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  Keyboard,
+  Dimensions,
+  UIManager,
+  findNodeHandle
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -30,6 +34,73 @@ const EditProfileScreen = () => {
   const [address, setAddress] = useState(userData?.address || '');
   const [avatar, setAvatar] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Keyboard states
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Input refs
+  const fullNameRef = useRef(null);
+  const emailRef = useRef(null);
+  const phoneRef = useRef(null);
+  const addressRef = useRef(null);
+  const scrollViewRef = useRef(null);
+  
+  // Keyboard listeners to adjust scroll
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+  
+  // Handle focused input to ensure it's visible
+  const handleInputFocus = (fieldRef) => {
+    if (!fieldRef?.current) return;
+    
+    // Đảm bảo mã này chỉ chạy sau khi component đã render
+    setTimeout(() => {
+      const nodeHandle = findNodeHandle(fieldRef.current);
+      if (!nodeHandle) return;
+      
+      // Tính toán vị trí của ô nhập
+      UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
+        // Tính toán vị trí của đáy ô nhập
+        const inputBottom = pageY + height;
+        
+        // Tính toán vị trí đỉnh của bàn phím
+        const screenHeight = Dimensions.get('window').height;
+        const keyboardTop = screenHeight - keyboardHeight;
+        
+        // Thêm khoảng cách để dễ nhìn
+        const paddingForVisibility = 20;
+        
+        // Chỉ cuộn nếu ô nhập bị che bởi bàn phím
+        if (inputBottom + paddingForVisibility > keyboardTop) {
+          // Cuộn chính xác đến vị trí của ô nhập liệu
+          scrollViewRef.current?.scrollTo({ 
+            y: pageY - 100, // Cuộn ô nhập lên vị trí cách đỉnh màn hình 100px
+            animated: true 
+          });
+        }
+      });
+    }, 100);
+  };
 
   // Xin quyền truy cập thư viện ảnh khi component được mount
   useEffect(() => {
@@ -125,7 +196,16 @@ const EditProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView 
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentContainerStyle={{
+          ...styles.scrollContainer,
+          paddingBottom: keyboardVisible ? 150 : 80
+        }}
+      >
         {/* Top bar */}
         <View style={styles.top}>
           <TouchableOpacity
@@ -160,6 +240,10 @@ const EditProfileScreen = () => {
             onChangeText={setFullName}
             placeholder="Enter your full name"
             placeholderTextColor="#000000"
+            ref={fullNameRef}
+            returnKeyType="next"
+            onSubmitEditing={() => phoneRef.current?.focus()}
+            onFocus={() => handleInputFocus(fullNameRef)}
           />
         </View>
 
@@ -173,6 +257,7 @@ const EditProfileScreen = () => {
             placeholderTextColor="#6B6E82"
             keyboardType="email-address"
             editable={false}
+            ref={emailRef}
           />
         </View>
 
@@ -185,6 +270,10 @@ const EditProfileScreen = () => {
             placeholder="Enter your phone number"
             placeholderTextColor="#000000"
             keyboardType="phone-pad"
+            ref={phoneRef}
+            returnKeyType="next"
+            onSubmitEditing={() => addressRef.current?.focus()}
+            onFocus={() => handleInputFocus(phoneRef)}
           />
         </View>
 
@@ -196,6 +285,8 @@ const EditProfileScreen = () => {
             onChangeText={setAddress}
             placeholder="Enter your address"
             placeholderTextColor="#000000"
+            ref={addressRef}
+            onFocus={() => handleInputFocus(addressRef)}
           />
         </View>
 

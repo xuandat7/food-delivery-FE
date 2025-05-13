@@ -7,6 +7,7 @@ import categoryAPI from './categoryAPI';
 import restaurantAPI from './restaurantAPI';
 import dishAPI from './dishAPI';
 import cartAPI from './cartAPI';
+import orderAPI from './orderAPI';
 import { BASE_URL, AsyncStorage } from './apiConfig';
 
 // Export for use in components
@@ -17,6 +18,7 @@ export {
   restaurantAPI,
   dishAPI,
   cartAPI,
+  orderAPI,
   BASE_URL,
   AsyncStorage
 };
@@ -28,5 +30,6 @@ export default {
   category: categoryAPI,
   restaurant: restaurantAPI,
   dish: dishAPI,
-  ...cartAPI
+  ...cartAPI,
+  order: orderAPI
 }; 

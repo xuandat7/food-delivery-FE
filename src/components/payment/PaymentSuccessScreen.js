@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { cartAPI } from '../../services';
+import { orderAPI } from '../../services';
 
 const PaymentSuccessScreen = () => {
   const navigation = useNavigation();
@@ -11,7 +11,7 @@ const PaymentSuccessScreen = () => {
   useEffect(() => {
     const resetCartAndNotify = async () => {
       try {
-        await cartAPI.createOrder();
+        await orderAPI.createOrder();
         // Optionally, you could show a toast or notification here
       } catch (e) {
         // Optionally handle error

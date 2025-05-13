@@ -45,9 +45,6 @@ export const AllType = () => {
     <View className="mt-6">
       <View className="flex-row justify-between items-center mb-4">
         <Text style={styles.categoryTitle}>Loại nhà hàng</Text>
-        <TouchableOpacity onPress={() => navigation.navigate("AllTypeRestaurant")}>
-          <Text className="text-[#FB6D3A] font-medium">Xem tất cả</Text>
-        </TouchableOpacity>
       </View>
       
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>

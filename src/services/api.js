@@ -1411,7 +1411,7 @@ const clearCart = async () => {
 const createOrder = async () => {
   try {
     const token = await AsyncStorage.getItem('token') || '';
-    const response = await fetch(`${BASE_URL}/order`, {
+    const response = await fetch(`${BASE_URL}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1420,6 +1420,30 @@ const createOrder = async () => {
     });
     const data = await response.json();
     if (!response.ok) return { success: false, message: data.message || 'Failed to create cart' };
+    return { success: true, data };
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+/**
+ * Get user's order history
+ * @param {number} page - Page number (default 1)
+ * @param {number} limit - Page size (default 10)
+ * @returns {Promise} - API response
+ */
+const getMyOrders = async (page = 1, limit = 10) => {
+  try {
+    const token = await AsyncStorage.getItem('token') || '';
+    const response = await fetch(`${BASE_URL}/orders/my-orders?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+    });
+    const data = await response.json();
+    if (!response.ok) return { success: false, message: data.message || 'Failed to fetch orders' };
     return { success: true, data };
   } catch (error) {
     return handleError(error);
@@ -1439,4 +1463,5 @@ export default {
   updateCartItemQuantity,
   clearCart, // <-- add this line
   createOrder, // <-- add this line
+  getMyOrders, // <-- add this line
 };

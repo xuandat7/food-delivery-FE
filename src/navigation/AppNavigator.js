@@ -49,6 +49,8 @@ import PaymentSuccessScreen from '../components/payment/PaymentSuccessScreen';
 // Import Type Restaurants Screen
 import TypeRestaurantsScreen from '../screens/home/TypeRestaurantsScreen';
 
+import OrderDetailScreen from '../screens/order/OrderDetailScreen';
+
 // Create stack navigators
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -157,6 +159,7 @@ const AppNavigator = () => {
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Menu" component={MenuScreen} />
         <Stack.Screen name="MyOrdersScreen" component={MyOrdersScreen} />
+        <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }} />
         
         {/* Restaurant screens */}
         <Stack.Screen name="RestaurantTabs" component={RestaurantTabNavigator} />

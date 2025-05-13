@@ -11,7 +11,7 @@ const SearchScreen = (props) => {
   };
   
   const handleRestaurantPress = (restaurant) => {
-    navigation.navigate('RestaurantView', { restaurant });
+    navigation.navigate('RestaurantView', { id: restaurant.id });
   };
   
   const handleFoodPress = (food) => {
@@ -28,8 +28,6 @@ const SearchScreen = (props) => {
         {...props} 
         onBack={handleBack}
         onRestaurantPress={handleRestaurantPress}
-        onFoodPress={handleFoodPress}
-        onKeywordPress={handleKeywordPress}
       />
     </SafeAreaView>
   );

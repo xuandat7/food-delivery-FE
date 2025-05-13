@@ -7,16 +7,12 @@ import { AllType } from "../../components/home/AllType";
 import { Search } from "../../components/home/Search";
 import { Restaurant } from "../../components/home/Restaurant";
 import { userAPI, cartAPI, AsyncStorage } from '../../services';
-import { Top } from "../../components/home/Top";
-import { HeyHalalGood } from "../../components/home/HeyHalalGood";
-import { RestaurantWrapper } from "../../components/home/RestaurantWrapper";
-import { FontAwesome, Entypo } from '@expo/vector-icons';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState(""); // State để lưu tên người dùng
-  const [greeting, setGreeting] = useState(""); // State để lưu lời chào theo thời gian
+  const [userName, setUserName] = useState(""); 
+  const [greeting, setGreeting] = useState(""); 
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {

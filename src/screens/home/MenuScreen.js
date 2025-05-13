@@ -166,17 +166,36 @@ export default function MenuScreen() {
             <MenuItem 
               label={menuItems[0].section[1].label} 
               icon={menuItems[0].section[1].icon}
+              onPress={() => navigation.navigate('AddressesScreen')}
             />
           </View>
           {/* Section 2 */}
           <View style={styles.menuGroup}>
-            {menuItems[1].section.map((item, idx) => (
-              <MenuItem 
-                key={item.label} 
-                label={item.label} 
-                icon={item.icon}
-              />
-            ))}
+            <MenuItem 
+              label={menuItems[1].section[0].label} 
+              icon={menuItems[1].section[0].icon}
+              onPress={() => navigation.navigate('EditCart')}
+            />
+            <MenuItem 
+              label={menuItems[1].section[1].label} 
+              icon={menuItems[1].section[1].icon}
+              onPress={() => navigation.navigate('FavouriteScreen')}
+            />
+            <MenuItem 
+              label={menuItems[1].section[2].label} 
+              icon={menuItems[1].section[2].icon}
+              onPress={() => navigation.navigate('NotificationScreen')}
+            />
+            <MenuItem 
+              label={menuItems[1].section[3].label} 
+              icon={menuItems[1].section[3].icon}
+              onPress={() => navigation.navigate('PaymentMethod')}
+            />
+            <MenuItem 
+              label="My Orders" 
+              icon="list-outline"
+              onPress={() => navigation.navigate('MyOrdersScreen')}
+            />
           </View>
         </View>
         {/* Logout */}

@@ -5,7 +5,7 @@ const foodImg = require('../../../assets/icon.png');
 const iconBack = require('../../../assets/icon-back.png');
 const iconSearch = require('../../../assets/icon-search.png');
 const iconFilter = require('../../../assets/icon-filter.png');
-const iconDropdown = require('../../../assets/icon-dropdown.png');
+// const iconDropdown = require('../../../assets/icon-dropdown.png'); // Removed: file does not exist
 
 const foods = [
   { name: "Burger Bistro", restaurant: "Rose Garden", price: 40 },
@@ -243,4 +243,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FoodSearchScreen; 
+export default FoodSearchScreen;

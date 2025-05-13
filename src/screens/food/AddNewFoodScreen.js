@@ -19,9 +19,9 @@ import { useNavigation, useRoute, CommonActions } from '@react-navigation/native
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
-import api from '../../services/api';
+import { restaurantAPI, categoryAPI, dishAPI } from '../../services';
 
-const AddNewItemsScreen = () => {
+const AddNewFoodScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isEditing = route.params?.isEditing || false;
@@ -74,7 +74,7 @@ const AddNewItemsScreen = () => {
       setLoadingCategories(true);
       
       // Phương pháp 1: Lấy categories từ profile nhà hàng
-      const profileResponse = await api.restaurant.getProfile();
+      const profileResponse = await restaurantAPI.getProfile();
       
       if (profileResponse.success && profileResponse.data) {
         // Tạo danh sách categories từ dishes trong profile
@@ -107,7 +107,7 @@ const AddNewItemsScreen = () => {
         try {
           if (profileResponse.data.id) {
             console.log('Thử lấy danh mục từ API categories với ID:', profileResponse.data.id);
-            const categoryResponse = await api.category.getCategoriesByRestaurant(profileResponse.data.id);
+            const categoryResponse = await categoryAPI.getCategoriesByRestaurant(profileResponse.data.id);
             
             if (categoryResponse.success && categoryResponse.data && categoryResponse.data.length > 0) {
               // Transform category objects to strings containing just the name
@@ -227,8 +227,8 @@ const AddNewItemsScreen = () => {
       
       // Call API to add/update dish
       const response = isEditing 
-        ? await api.restaurant.updateDish(editingFood.id, dishData)
-        : await api.restaurant.addDish(dishData);
+        ? await dishAPI.updateDish(editingFood.id, dishData)
+        : await dishAPI.addDish(dishData);
       
       if (response.success) {
         Alert.alert(
@@ -658,4 +658,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddNewItemsScreen;
+export default AddNewFoodScreen;

@@ -15,7 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import api from '../../services/api';
+import { authAPI } from '../../services';
 
 const { height, width } = Dimensions.get('window');
 
@@ -59,7 +59,7 @@ const ForgotPasswordScreen = () => {
     
     try {
       // Call the forgot password API
-      const response = await api.auth.forgotPassword(email);
+      const response = await authAPI.forgotPassword(email);
       
       if (response.success) {
         // Show success message and proceed to verification screen

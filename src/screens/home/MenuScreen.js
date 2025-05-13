@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { COLORS } from '../../constants/theme';
 import { useNavigation } from '@react-navigation/native';
-import api, { AsyncStorage } from '../../services/api';
+import { userAPI, authAPI, AsyncStorage } from '../../services';
 import { Ionicons } from '@expo/vector-icons';
 import EditCart from '../../components/cart/EditCart';
 
@@ -42,7 +42,7 @@ export default function MenuScreen() {
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      const response = await api.user.getProfile();
+      const response = await userAPI.getProfile();
       if (response.success) {
         setUserData(response.data);
       } else {
@@ -80,7 +80,7 @@ export default function MenuScreen() {
                 const token = await AsyncStorage.getItem('token');
                 if (token) {
                   try {
-                    const response = await api.auth.logout();
+                    const response = await authAPI.logout();
                     console.log('Logout response:', response);
                   } catch (logoutErr) {
                     console.log('Logout API error (non-critical):', logoutErr);

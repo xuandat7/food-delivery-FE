@@ -17,8 +17,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import RunningOrdersScreen from './RunningOrdersScreen';
-import { AsyncStorage } from '../../services/api';
-import api from '../../services/api';
+import { AsyncStorage, restaurantAPI } from '../../services';
 
 // Custom Chart Component (simplified for this implementation)
 const RevenueChart = () => {
@@ -84,7 +83,7 @@ const SellerDashboard = () => {
         }
         
         // Lấy thông tin từ server
-        const response = await api.restaurant.getProfile();
+        const response = await restaurantAPI.getProfile();
         
         if (response.success) {
           setRestaurantInfo(response.data);

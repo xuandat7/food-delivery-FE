@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import api from "../../services/api";
+import { restaurantAPI } from "../../services";
 
 export const Restaurant = () => {
   const navigation = useNavigation();
@@ -18,7 +18,7 @@ export const Restaurant = () => {
   const fetchRestaurants = async () => {
     try {
       setLoading(true);
-      const response = await api.restaurant.getAllRestaurants(0, 10);
+      const response = await restaurantAPI.getAllRestaurants(0, 10);
       
       if (response.success && response.data.content?.length > 0) {
         console.log('Fetched restaurants:', response.data.content.length);

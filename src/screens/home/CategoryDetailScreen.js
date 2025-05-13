@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
+import { dishAPI } from '../../services';
 
 const CategoryDetailScreen = ({ route, navigation }) => {
   const { category } = route.params;
@@ -30,7 +30,7 @@ const CategoryDetailScreen = ({ route, navigation }) => {
       const currentPage = refresh ? 0 : page;
       console.log(`Fetching dishes for category: ${category.name} (ID: ${category.id}), page: ${currentPage}`);
       
-      const response = await api.dish.getPublicDishByCategory(category.id, currentPage, 10);
+      const response = await dishAPI.getPublicDishByCategory(category.id, currentPage, 10);
       
       if (response.success) {
         console.log(`Got ${response.data.content?.length || 0} dishes`);

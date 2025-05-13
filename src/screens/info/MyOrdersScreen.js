@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons, Entypo } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import api from '../../services/api';
+import { orderAPI as api } from '../../services';
 
 const STATUS_PROCESSING = ['pending', 'confirmed', 'processing', 'delivering'];
 const STATUS_HISTORY = ['completed', 'cancelled'];

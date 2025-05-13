@@ -19,11 +19,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import api from '../../services/api'; // Import API service
+import { restaurantAPI } from '../../services'; // Import API service
 
-const FoodItem = ({ item, onPress, onEditPress }) => {
+const FoodItem = ({ item, onEditPress }) => {
   return (
-    <TouchableOpacity style={styles.foodItem} onPress={() => onPress(item)}>
+    <View style={styles.foodItem}>
       {item.thumbnail ? (
         <Image 
           source={{ uri: item.thumbnail }}
@@ -52,7 +52,7 @@ const FoodItem = ({ item, onPress, onEditPress }) => {
           <Text style={styles.price}>{item.price ? new Intl.NumberFormat('vi-VN').format(item.price) + 'đ' : 'Chưa có giá'}</Text>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -80,7 +80,7 @@ const MyFoodScreen = () => {
       setLoading(true);
       setError(null);
       
-      const response = await api.restaurant.getDishes(0, 100);
+      const response = await restaurantAPI.getDishes(0, 100);
       console.log("API Response:", response);
       
       if (response.success) {
@@ -133,10 +133,6 @@ const MyFoodScreen = () => {
     navigation.goBack();
   };
 
-  const handleFoodItemPress = (foodItem) => {
-    navigation.navigate('ChefFoodDetails', { foodItem });
-  };
-
   const handleEditPress = (foodItem) => {
     // Set the selected dish and show modal
     setSelectedDish(foodItem);
@@ -150,19 +146,8 @@ const MyFoodScreen = () => {
     console.log('Editing dish:', selectedDish?.id, selectedDish?.name);
     
     if (selectedDish) {
-      // Đảm bảo đường dẫn screen name chính xác
-      setTimeout(() => {
-        // Sử dụng cách điều hướng khác
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'EditFoodScreen',
-              params: { foodItem: selectedDish }
-            }
-          ]
-        });
-      }, 300);
+      // Sử dụng navigation.navigate thay vì reset
+      navigation.navigate('EditFoodScreen', { foodItem: selectedDish });
     } else {
       console.error('No dish selected for editing');
       Alert.alert('Lỗi', 'Không thể sửa món ăn, vui lòng thử lại');
@@ -197,7 +182,7 @@ const MyFoodScreen = () => {
       setLoading(true);
       
       // Call API to delete dish
-      const response = await api.restaurant.deleteDish(selectedDish.id);
+      const response = await restaurantAPI.deleteDish(selectedDish.id);
       
       if (response.success) {
         // Remove dish from state
@@ -280,7 +265,6 @@ const MyFoodScreen = () => {
           renderItem={({ item }) => (
             <FoodItem 
               item={item} 
-              onPress={handleFoodItemPress} 
               onEditPress={handleEditPress}
             />
           )}

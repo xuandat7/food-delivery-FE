@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Alert, SafeAreaView, Platform } from 'react-native';
-import api from '../../services/api';
+import { dishAPI, restaurantAPI, cartAPI } from '../../services';
 
 const iconBack = require('../../../assets/icon-back.png');
 const iconSave = require('../../../assets/icon-cancel.png');
@@ -34,7 +34,7 @@ const FoodDetailsScreen = ({ navigation, route }) => {
     setError(null);
     
     try {
-      const response = await api.dish.getDishById(dishId);
+      const response = await dishAPI.getDishById(dishId);
       
       if (response.success) {
         setFood({
@@ -64,7 +64,7 @@ const FoodDetailsScreen = ({ navigation, route }) => {
   
   const fetchRestaurantDetails = async (restaurantId) => {
     try {
-      const response = await api.restaurant.getRestaurantById(restaurantId);
+      const response = await restaurantAPI.getRestaurantById(restaurantId);
       
       if (response.success) {
         setRestaurant(response.data);
@@ -81,7 +81,7 @@ const FoodDetailsScreen = ({ navigation, route }) => {
   const handleAddToCart = async () => {
     if (!food?.id) return;
     try {
-      const res = await api.addToCart(food.id, quantity);
+      const res = await cartAPI.addToCart(food.id, quantity);
       if (res.success) {
         Alert.alert('Thành công', 'Đã thêm vào giỏ hàng!');
       } else {

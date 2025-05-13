@@ -15,7 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import api from '../../services/api';
+import { authAPI } from '../../services';
 
 const { height, width } = Dimensions.get('window');
 
@@ -80,7 +80,7 @@ const VerificationScreen = () => {
     
     try {
       // Call the verify OTP API
-      const response = await api.auth.verifyOTP(email, otpValue);
+      const response = await authAPI.verifyOTP(email, otpValue);
       
       if (response.success) {
         // Show success message
@@ -123,7 +123,7 @@ const VerificationScreen = () => {
     if (isResendActive) {
       try {
         // Call the forgot password API again to resend OTP
-        const response = await api.auth.forgotPassword(email);
+        const response = await authAPI.forgotPassword(email);
         
         if (response.success) {
           // Reset timer and OTP fields

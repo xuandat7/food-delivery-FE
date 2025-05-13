@@ -15,7 +15,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import WithdrawSuccessScreen from './WithdrawSuccessScreen';
-import api, { AsyncStorage } from '../../services/api';
+import { authAPI, AsyncStorage } from '../../services';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -68,7 +68,7 @@ const ProfileScreen = () => {
             try {
               setIsLoggingOut(true);
               // Gọi API logout
-              const response = await api.auth.logout();
+              const response = await authAPI.logout();
               
               console.log('Logout response:', response);
               

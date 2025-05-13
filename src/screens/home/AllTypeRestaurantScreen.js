@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../services/api';
+import { categoryAPI } from '../../services';
 
-const AllCategoriesScreen = ({ navigation }) => {
+const AllTypeRestaurantScreen = ({ navigation }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +15,7 @@ const AllCategoriesScreen = ({ navigation }) => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await api.category.getAllCategories();
+      const response = await categoryAPI.getAllCategories();
       if (response.success) {
         // Thêm "Tất cả" vào đầu danh sách nếu không có sẵn
         const allExists = response.data.some(cat => cat.name === "Tất cả");
@@ -174,4 +174,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AllCategoriesScreen; 
+export default AllTypeRestaurantScreen; 

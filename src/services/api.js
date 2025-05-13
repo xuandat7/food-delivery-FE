@@ -248,38 +248,183 @@ export const userAPI = {
     try {
       const token = await AsyncStorage.getItem('token') || '';
       
-      // Tạo đối tượng JSON với các trường cần thiết
-      const jsonData = {};
-      if (userData.full_name) jsonData.full_name = userData.full_name;
-      if (userData.phone) jsonData.phone = userData.phone;
-      if (userData.address) jsonData.address = userData.address;
+      // Kiểm tra xem có cần upload ảnh không
+      const hasAvatar = userData.avatar && userData.avatar.uri;
       
-      console.log('Attempting to update profile with JSON data:', JSON.stringify(jsonData));
-      
-      // Gửi request JSON đơn giản (không có avatar)
-      const response = await fetch(`${BASE_URL}/users/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jsonData)
-      });
-      
-      console.log('Profile update response status:', response.status);
-      const data = await response.json();
-      console.log('Profile update response data:', JSON.stringify(data));
-      
-      if (!response.ok) throw new Error(data.message || 'Failed to update profile');
-      
-      // Đảm bảo data có trường full_name để UI hiển thị đúng
-      if (!data.full_name && data.fullName) {
-        data.full_name = data.fullName;
+      if (hasAvatar) {
+        // Sử dụng FormData nếu có avatar
+        const formData = new FormData();
+        
+        // Thêm các trường dữ liệu text
+        if (userData.full_name) formData.append('full_name', userData.full_name);
+        if (userData.phone) formData.append('phone', userData.phone);
+        if (userData.address) formData.append('address', userData.address);
+        
+        // Thêm avatar vào FormData
+        const uriParts = userData.avatar.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        
+        formData.append('avatar', {
+          uri: userData.avatar.uri,
+          name: `avatar.${fileType}`,
+          type: `image/${fileType}`,
+        });
+        
+        console.log('Updating profile with avatar, FormData:', JSON.stringify(Object.fromEntries(formData._parts)));
+        
+        // Gửi request với FormData
+        const response = await fetch(`${BASE_URL}/users/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            // Content-Type được tự động set với FormData
+          },
+          body: formData
+        });
+        
+        console.log('Profile update response status:', response.status);
+        const data = await response.json();
+        console.log('Profile update response data:', JSON.stringify(data));
+        
+        if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+        
+        // Đảm bảo data có trường full_name để UI hiển thị đúng
+        if (!data.full_name && data.fullName) {
+          data.full_name = data.fullName;
+        }
+        
+        return { success: true, message: 'Profile updated successfully', data: data };
+      } else {
+        // Sử dụng JSON nếu không có avatar
+        const jsonData = {};
+        if (userData.full_name) jsonData.full_name = userData.full_name;
+        if (userData.phone) jsonData.phone = userData.phone;
+        if (userData.address) jsonData.address = userData.address;
+        
+        console.log('Updating profile with JSON data:', JSON.stringify(jsonData));
+        
+        // Gửi request JSON đơn giản (không có avatar)
+        const response = await fetch(`${BASE_URL}/users/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(jsonData)
+        });
+        
+        console.log('Profile update response status:', response.status);
+        const data = await response.json();
+        console.log('Profile update response data:', JSON.stringify(data));
+        
+        if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+        
+        // Đảm bảo data có trường full_name để UI hiển thị đúng
+        if (!data.full_name && data.fullName) {
+          data.full_name = data.fullName;
+        }
+        
+        return { success: true, message: 'Profile updated successfully', data: data };
       }
-      
-      return { success: true, message: 'Profile updated successfully', data: data };
     } catch (error) {
       console.error('Profile update error:', error);
+      return handleError(error);
+    }
+  }
+};
+
+/**
+ * Category related API calls
+ */
+export const categoryAPI = {
+  /**
+   * Get all categories
+   * @returns {Promise} - API response
+   */
+  getAllCategories: async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
+      
+      const response = await fetch(`${BASE_URL}/categories`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log('Categories response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Categories response data:', data);
+      
+      if (!response.ok) {
+        console.error('Categories request failed:', data);
+        throw new Error(data.message || 'Failed to fetch categories');
+      }
+      
+      // Lưu dữ liệu vào AsyncStorage để dùng offline
+      await AsyncStorage.setItem('categories', JSON.stringify(data));
+      
+      return { success: true, message: 'Categories fetched successfully', data: data };
+    } catch (error) {
+      console.error('Categories request error:', error);
+      
+      // Thử lấy dữ liệu từ AsyncStorage
+      try {
+        const cachedData = await AsyncStorage.getItem('categories');
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          console.log('Using cached categories data');
+          return { 
+            success: true, 
+            message: 'Using cached categories', 
+            data: parsedData,
+            isOffline: true 
+          };
+        }
+      } catch (cacheError) {
+        console.error('Error reading cached categories:', cacheError);
+      }
+      
+      // Fallback data nếu không thể kết nối đến server và không có dữ liệu cached
+      const fallbackCategories = [
+        { id: 1, name: "Tất cả" },
+        { id: 2, name: "Burger" },
+        { id: 3, name: "Pizza" },
+        { id: 4, name: "Đồ uống" },
+      ];
+      
+      return { 
+        success: true, 
+        message: 'Using fallback categories data', 
+        data: fallbackCategories,
+        isOffline: true 
+      };
+    }
+  },
+  
+  /**
+   * Get category by ID
+   * @param {number} id - Category ID
+   * @returns {Promise} - API response
+   */
+  getCategoryById: async (id) => {
+    try {
+      const response = await fetch(`${BASE_URL}/categories/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch category');
+      }
+      
+      return { success: true, message: 'Category fetched successfully', data: data };
+    } catch (error) {
       return handleError(error);
     }
   }
@@ -537,9 +682,10 @@ export const restaurantAPI = {
   }
 };
 
-// Update the default export to include restaurant API
+// Update the default export to include all APIs
 export default {
   auth: authAPI,
   user: userAPI,
+  category: categoryAPI,
   restaurant: restaurantAPI
 }; 

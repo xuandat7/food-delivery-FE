@@ -28,6 +28,10 @@ import FilterScreen from '../screens/home/FilterScreen';
 import FoodSearchScreen from '../screens/home/FoodSearchScreen';
 import FoodDetailsScreen from '../screens/home/FoodDetailsScreen';
 
+// Import category screens
+import AllCategoriesScreen from '../screens/home/AllCategoriesScreen';
+import CategoryDetailScreen from '../screens/home/CategoryDetailScreen';
+
 // Import restaurant screens
 import SellerDashboard from '../screens/chef/SellerDashboard';
 import MyFoodScreen from '../screens/chef/MyFoodScreen';
@@ -133,6 +137,10 @@ const AppNavigator = () => {
         <Stack.Screen name="FoodSearch" component={FoodSearchScreen} />
         <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
         <Stack.Screen name="Filter" component={FilterScreen} />
+        
+        {/* Category screens */}
+        <Stack.Screen name="AllCategories" component={AllCategoriesScreen} />
+        <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
         
         {/* Customer screens */}
         <Stack.Screen name="Home" component={HomeScreen} />

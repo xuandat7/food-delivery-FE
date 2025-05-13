@@ -5,12 +5,32 @@ import { useNavigation } from '@react-navigation/native';
 
 const SearchScreen = (props) => {
   const navigation = useNavigation();
+  
+  const handleBack = () => {
+    navigation.goBack();
+  };
+  
   const handleRestaurantPress = (restaurant) => {
     navigation.navigate('RestaurantView', { restaurant });
   };
+  
+  const handleFoodPress = (food) => {
+    navigation.navigate('FoodDetails', { food });
+  };
+  
+  const handleKeywordPress = (keyword) => {
+    navigation.navigate('FoodSearch', { keyword });
+  };
+  
   return (
     <SafeAreaView style={styles.container}>
-      <Search {...props} onRestaurantPress={handleRestaurantPress} />
+      <Search 
+        {...props} 
+        onBack={handleBack}
+        onRestaurantPress={handleRestaurantPress}
+        onFoodPress={handleFoodPress}
+        onKeywordPress={handleKeywordPress}
+      />
     </SafeAreaView>
   );
 };

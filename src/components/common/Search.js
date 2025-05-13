@@ -72,7 +72,17 @@ const Search = ({
         <Text style={styles.sectionTitle}>Recent Keywords</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.keywordsRow}>
           {recentKeywords.map((kw, idx) => (
-            <TouchableOpacity key={kw+idx} style={styles.keywordBtn} onPress={() => navigation.navigate('FoodSearch', { keyword: kw })}>
+            <TouchableOpacity 
+              key={kw+idx} 
+              style={styles.keywordBtn} 
+              onPress={() => {
+                if (onKeywordPress) {
+                  onKeywordPress(kw);
+                } else if (navigation) {
+                  navigation.navigate('FoodSearch', { keyword: kw });
+                }
+              }}
+            >
               <Text style={styles.keywordText}>{kw}</Text>
             </TouchableOpacity>
           ))}

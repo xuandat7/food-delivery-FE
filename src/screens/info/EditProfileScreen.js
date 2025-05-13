@@ -53,7 +53,11 @@ const EditProfileScreen = () => {
         quality: 0.7,
       });
 
+      // Ghi log cấu trúc dữ liệu trả về từ image picker để debug
+      console.log('ImagePicker result structure:', JSON.stringify(result));
+
       if (!result.canceled) {
+        console.log('Selected asset:', JSON.stringify(result.assets[0]));
         setAvatar(result.assets[0]);
       }
     } catch (error) {

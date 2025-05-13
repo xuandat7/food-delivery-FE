@@ -743,6 +743,44 @@ const restaurantAPI = {
       console.error('Update order status error:', error);
       return handleError(error);
     }
+  },
+
+  /**
+   * Get total revenue for restaurant
+   * @returns {Promise} - API response
+   */
+  getTotalRevenue: async () => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      
+      if (!token) {
+        console.error('No token available for total revenue request');
+        return { 
+          success: false, 
+          message: 'Bạn chưa đăng nhập!', 
+          data: { totalRevenue: 0 }
+        };
+      }
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
+      
+      const response = await fetch(`${BASE_URL}/statistics/total-revenue`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return handleError(error, 'Failed to fetch total revenue');
+    }
   }
 };
 

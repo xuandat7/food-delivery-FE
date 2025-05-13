@@ -142,7 +142,8 @@ const PendingOrdersScreen = () => {
           <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#181C2E', marginBottom: 2 }}>{parseInt(item.total_price).toLocaleString()} đ</Text>
           <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{item.created_at?.slice(11, 16)} {item.created_at?.slice(8, 10)} thg {item.created_at?.slice(5, 7)}, {item.created_at?.slice(0, 4)}  •  {item.totalItems} món</Text>
           <Text style={{ color: '#aaa', fontSize: 13 }}>#{item.id}</Text>
-        </View>        <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', height: 54, minWidth: 140 }}>
+        </View>
+        <View style={{ alignItems: 'flex-end', justifyContent: 'space-between', height: 54, minWidth: 140 }}>
           <Text style={{ color: '#3498db', fontWeight: 'bold', fontSize: 14, marginBottom: 8 }}>Chờ Xác Nhận</Text>
           
           {/* Custom Dropdown */}
@@ -249,16 +250,17 @@ const PendingOrdersScreen = () => {
           <Ionicons name="arrow-back" size={24} color="#FB6D3A" />
         </TouchableOpacity>
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#181C2E' }}>Đơn hàng</Text>
-      </View>
-      {/* Tabs */}
+      </View>      {/* Tabs */}
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F2F2F2', marginBottom: 8 }}>
         <TouchableOpacity onPress={() => setTab('processing')} style={{ flex: 1, alignItems: 'center', paddingVertical: 10 }}>
           <Text style={{ fontSize: 17, fontWeight: 'bold', color: tab === 'processing' ? '#FB6D3A' : '#B0AEB8' }}>Đang chờ</Text>
-          {tab === 'processing' && <View style={{ height: 3, backgroundColor: '#FB6D3A', borderRadius: 2, marginTop: 4, width: 60 }} />}        </TouchableOpacity>
+          {tab === 'processing' && <View style={{ height: 3, backgroundColor: '#FB6D3A', borderRadius: 2, marginTop: 4, width: 60 }} />}
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => setTab('history')} style={{ flex: 1, alignItems: 'center', paddingVertical: 10 }}>
           <Text style={{ fontSize: 17, fontWeight: 'bold', color: tab === 'history' ? '#FB6D3A' : '#B0AEB8' }}>Lịch sử</Text>
           {tab === 'history' && <View style={{ height: 3, backgroundColor: '#FB6D3A', borderRadius: 2, marginTop: 4, width: 60 }} />}
-        </TouchableOpacity></View>
+        </TouchableOpacity>
+      </View>
       {/* List */}
       {tab === 'processing' ? (
         <FlatList

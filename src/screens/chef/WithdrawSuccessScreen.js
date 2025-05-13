@@ -24,22 +24,22 @@ const WithdrawSuccessScreen = ({ visible, onClose }) => {
           <View style={styles.iconContainer}>
             {/* Decorative elements like stars */}
             <View style={[styles.star, styles.starTopRight]}>
-              <Ionicons name="star" size={16} color="#FF7621" />
+              <Ionicons name="star" size={16} color="#3498db" />
             </View>
             <View style={[styles.star, styles.starTopLeft]}>
-              <Ionicons name="star-outline" size={16} color="#FF7621AA" />
+              <Ionicons name="star-outline" size={16} color="#3498dbAA" />
             </View>
             <View style={[styles.star, styles.starBottomLeft]}>
-              <Ionicons name="ellipse" size={8} color="#FF762188" />
+              <Ionicons name="ellipse" size={8} color="#3498db88" />
             </View>
             <View style={[styles.star, styles.starBottomRight]}>
-              <Ionicons name="star" size={16} color="#FF7621" />
+              <Ionicons name="star" size={16} color="#3498db" />
             </View>
             <View style={[styles.star, styles.starBottom]}>
-              <Ionicons name="ellipse" size={8} color="#FF762188" />
+              <Ionicons name="ellipse" size={8} color="#3498db88" />
             </View>
             <View style={[styles.star, styles.starMiddleLeft]}>
-              <Ionicons name="sparkles" size={24} color="#FF762188" />
+              <Ionicons name="sparkles" size={24} color="#3498db88" />
             </View>
 
             {/* Success checkmark */}
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FF7621',
+    backgroundColor: '#3498db',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   okButton: {
-    backgroundColor: '#FF7621',
+    backgroundColor: '#3498db',
     borderRadius: 10,
     width: '100%',
     height: 60,

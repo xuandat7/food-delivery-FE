@@ -11,7 +11,8 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
-  ScrollView
+  ScrollView,
+  Modal
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -20,7 +21,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import api from '../../services/api'; // Import API service
 
-const FoodItem = ({ item, onPress }) => {
+const FoodItem = ({ item, onPress, onEditPress }) => {
   return (
     <TouchableOpacity style={styles.foodItem} onPress={() => onPress(item)}>
       {item.thumbnail ? (
@@ -35,7 +36,10 @@ const FoodItem = ({ item, onPress }) => {
       <View style={styles.foodInfo}>
         <View style={styles.foodHeader}>
           <Text style={styles.foodName}>{item.name}</Text>
-          <TouchableOpacity style={styles.moreIcon}>
+          <TouchableOpacity 
+            style={styles.moreIcon} 
+            onPress={() => onEditPress(item)}
+          >
             <Feather name="more-vertical" size={20} color="#333" />
           </TouchableOpacity>
         </View>
@@ -46,13 +50,6 @@ const FoodItem = ({ item, onPress }) => {
         
         <View style={styles.priceRow}>
           <Text style={styles.price}>{item.price ? new Intl.NumberFormat('vi-VN').format(item.price) + 'đ' : 'Chưa có giá'}</Text>
-        </View>
-        
-        <View style={styles.reviewRow}>
-          <FontAwesome name="star" size={14} color="#FB6D3A" />
-          <Text style={styles.rating}>{item.rating || '5.0'}</Text>
-          <Text style={styles.reviewCount}>({item.reviews || '0'} Review)</Text>
-          <Text style={styles.pickupText}>Pick Up</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -68,6 +65,8 @@ const MyFoodScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDish, setSelectedDish] = useState(null);
   
   // Get unique categories from dishes
   const getCategories = () => {
@@ -138,6 +137,85 @@ const MyFoodScreen = () => {
     navigation.navigate('ChefFoodDetails', { foodItem });
   };
 
+  const handleEditPress = (foodItem) => {
+    // Set the selected dish and show modal
+    setSelectedDish(foodItem);
+    setModalVisible(true);
+  };
+  
+  const handleEditDish = () => {
+    setModalVisible(false);
+    
+    // Log chi tiết để debug
+    console.log('Editing dish:', selectedDish?.id, selectedDish?.name);
+    
+    if (selectedDish) {
+      // Đảm bảo đường dẫn screen name chính xác
+      setTimeout(() => {
+        // Sử dụng cách điều hướng khác
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'EditFoodScreen',
+              params: { foodItem: selectedDish }
+            }
+          ]
+        });
+      }, 300);
+    } else {
+      console.error('No dish selected for editing');
+      Alert.alert('Lỗi', 'Không thể sửa món ăn, vui lòng thử lại');
+    }
+  };
+  
+  const handleDeleteDish = () => {
+    setModalVisible(false);
+    
+    // Show confirmation dialog
+    Alert.alert(
+      'Xác nhận xóa',
+      `Bạn có chắc chắn muốn xóa món "${selectedDish?.name}" không?`,
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel'
+        },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: confirmDeleteDish
+        }
+      ]
+    );
+  };
+  
+  const confirmDeleteDish = async () => {
+    if (!selectedDish || !selectedDish.id) return;
+    
+    try {
+      setLoading(true);
+      
+      // Call API to delete dish
+      const response = await api.restaurant.deleteDish(selectedDish.id);
+      
+      if (response.success) {
+        // Remove dish from state
+        const updatedDishes = dishes.filter(dish => dish.id !== selectedDish.id);
+        setDishes(updatedDishes);
+        Alert.alert('Thành công', 'Đã xóa món ăn thành công');
+      } else {
+        // Handle error
+        Alert.alert('Lỗi', response.message || 'Không thể xóa món ăn');
+      }
+    } catch (error) {
+      console.error('Error deleting dish:', error);
+      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi xóa món ăn');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -185,7 +263,7 @@ const MyFoodScreen = () => {
       
       {loading && !refreshing ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FB6D3A" />
+          <ActivityIndicator size="large" color="#3498db" />
           <Text style={styles.loadingText}>Đang tải danh sách món ăn...</Text>
         </View>
       ) : error ? (
@@ -199,14 +277,20 @@ const MyFoodScreen = () => {
         <FlatList
           data={filteredDishes}
           keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-          renderItem={({ item }) => <FoodItem item={item} onPress={handleFoodItemPress} />}
+          renderItem={({ item }) => (
+            <FoodItem 
+              item={item} 
+              onPress={handleFoodItemPress} 
+              onEditPress={handleEditPress}
+            />
+          )}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={["#FB6D3A"]}
+              colors={["#3498db"]}
             />
           }
           ListEmptyComponent={
@@ -216,6 +300,50 @@ const MyFoodScreen = () => {
           }
         />
       )}
+      
+      {/* Options Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={handleEditDish}
+              >
+                <Feather name="edit-2" size={18} color="#333" />
+                <Text style={styles.modalOptionText}>Sửa sản phẩm</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.modalDivider} />
+              
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={handleDeleteDish}
+              >
+                <Feather name="trash-2" size={18} color="#FF3B30" />
+                <Text style={[styles.modalOptionText, styles.deleteText]}>Xóa sản phẩm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      
+      {/* Floating Action Button to add new items */}
+      <TouchableOpacity
+        style={styles.fabButton}
+        onPress={() => navigation.navigate('AddNewItems')}
+      >
+        <Ionicons name="add" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -248,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -272,7 +400,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginTop: 50,
+    marginTop: 10,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   backButton: {
     width: 45,
@@ -283,24 +414,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 17,
+    fontSize: 18,
     color: '#181C2E',
     marginLeft: 16,
-    fontWeight: '400',
+    fontWeight: '500',
   },
   categoryContainer: {
-    marginTop: 32,
+    marginTop: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F6F8FA',
     position: 'relative',
   },
   categoryScrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 10,
+    paddingBottom: 6,
   },
   categoryTab: {
     marginRight: 40,
-    paddingBottom: 10,
+    paddingBottom: 6,
     position: 'relative',
   },
   categoryTitle: {
@@ -309,7 +440,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   selectedCategoryTitle: {
-    color: '#FB6D3A',
+    color: '#3498db',
     fontWeight: '700',
   },
   activeIndicator: {
@@ -318,25 +449,25 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     width: 47,
     marginLeft: -10,
   },
   itemCount: {
     fontSize: 14,
     color: '#9B9BA5',
-    marginTop: 24,
+    marginTop: 12,
     marginLeft: 24,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   listContainer: {
-    paddingVertical: 16,
+    paddingVertical: 8,
     paddingHorizontal: 24,
     paddingBottom: 120, // Extra space for bottom tab
   },
   foodItem: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 16,
     height: 102,
   },
   foodImage: {
@@ -365,7 +496,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   categoryBadge: {
-    backgroundColor: 'rgba(255, 118, 33, 0.2)',
+    backgroundColor: 'rgba(52, 152, 219, 0.2)',
     borderRadius: 30,
     paddingHorizontal: 12,
     paddingVertical: 2,
@@ -373,7 +504,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 11,
-    color: '#FB6D3A',
+    color: '#3498db',
   },
   priceRow: {
     marginTop: 4,
@@ -383,26 +514,54 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#32343E',
   },
-  reviewRow: {
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    padding: 16,
   },
-  rating: {
-    fontSize: 12,
-    color: '#32343E',
-    marginLeft: 4,
-    marginRight: 4,
+  modalOptionText: {
+    fontSize: 16,
+    marginLeft: 12,
+    color: '#333',
   },
-  reviewCount: {
-    fontSize: 11,
-    color: '#9B9BA5',
+  deleteText: {
+    color: '#FF3B30',
   },
-  pickupText: {
-    fontSize: 11,
-    color: '#FB6D3A',
-    marginLeft: 'auto',
-  }
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#3498db',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
 });
 
 export default MyFoodScreen;

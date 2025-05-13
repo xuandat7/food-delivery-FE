@@ -346,7 +346,7 @@ export const categoryAPI = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
       
-      const response = await fetch(`${BASE_URL}/categories`, {
+      const response = await fetch(`${BASE_URL}/categories/all`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal
@@ -688,4 +688,4 @@ export default {
   user: userAPI,
   category: categoryAPI,
   restaurant: restaurantAPI
-}; 
+};

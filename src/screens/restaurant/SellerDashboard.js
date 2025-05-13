@@ -88,7 +88,6 @@ const SellerDashboard = () => {
         if (response.success) {
           setRestaurantInfo(response.data);
           console.log('Restaurant info loaded:', response.data.name || response.data.restaurant_name);
-          
           // Hiển thị thông báo nếu đang dùng dữ liệu offline
           if (response.isOffline) {
             Alert.alert(
@@ -97,10 +96,22 @@ const SellerDashboard = () => {
               [{ text: 'Đã hiểu', style: 'default' }]
             );
           }
-          
-          // Tạm thời đặt số đơn hàng cứng, sau sẽ cập nhật từ API
-          setRunningOrders(20);
-          setPendingOrders(5);
+          // Lấy số lượng đơn hàng running và pending từ API
+          try {
+            const ordersRes = await restaurantAPI.getRestaurantOrders(0, 50);
+            if (ordersRes.success && Array.isArray(ordersRes.data.content)) {
+              const running = ordersRes.data.content.filter(o => o.status === 'processing' || o.status === 'confirmed').length;
+              const pending = ordersRes.data.content.filter(o => o.status === 'pending').length;
+              setRunningOrders(running);
+              setPendingOrders(pending);
+            } else {
+              setRunningOrders(0);
+              setPendingOrders(0);
+            }
+          } catch (err) {
+            setRunningOrders(0);
+            setPendingOrders(0);
+          }
         } else {
           // Nếu API không thành công, thử lấy từ AsyncStorage
           const userString = await AsyncStorage.getItem('user');
@@ -131,8 +142,7 @@ const SellerDashboard = () => {
   };
   
   const handleToggleOrderRequests = () => {
-    // Implement order requests modal when created
-    console.log('Toggle order requests');
+    // navigation.navigate('PendingOrdersScreen');
   };
 
   return (
@@ -184,7 +194,7 @@ const SellerDashboard = () => {
               onPress={handleToggleRunningOrders}
             >
               <Text style={styles.statsNumber}>{runningOrders}</Text>
-              <Text style={styles.statsLabel}>RUNNING ORDERS</Text>
+              <Text style={styles.statsLabel}>ĐƠN HÀNG</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -192,7 +202,7 @@ const SellerDashboard = () => {
               onPress={handleToggleOrderRequests}
             >
               <Text style={styles.statsNumber}>{pendingOrders}</Text>
-              <Text style={styles.statsLabel}>ORDER REQUEST</Text>
+              <Text style={styles.statsLabel}>CHỜ XÁC NHẬN</Text>
             </TouchableOpacity>
           </View>
           

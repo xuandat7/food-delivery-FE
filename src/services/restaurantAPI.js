@@ -689,6 +689,60 @@ const restaurantAPI = {
       console.error('Update restaurant profile error:', error);
       return handleError(error);
     }
+  },
+
+  /**
+   * Get orders for the current restaurant
+   * @param {number} page - Page number (default 0)
+   * @param {number} limit - Results per page (default 10)
+   * @returns {Promise} - API response
+   */
+  getRestaurantOrders: async (page = 0, limit = 10) => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      if (!token) {
+        return { success: false, message: 'Bạn chưa đăng nhập!', data: null };
+      }
+      const response = await fetch(`${BASE_URL}/orders/restaurant-orders?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Không thể lấy danh sách đơn hàng');
+      return { success: true, data };
+    } catch (error) {
+      console.error('Get restaurant orders error:', error);
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Cập nhật trạng thái đơn hàng
+   * @param {number} orderId - ID của đơn hàng
+   * @param {string} status - Trạng thái mới (ví dụ: 'completed', 'processing', ...)
+   * @returns {Promise} - API response
+   */
+  updateOrderStatus: async (orderId, status) => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      if (!token) {
+        return { success: false, message: 'Bạn chưa đăng nhập!', data: null };
+      }
+      const response = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Không thể cập nhật trạng thái đơn hàng');
+      return { success: true, data };
+    } catch (error) {
+      console.error('Update order status error:', error);
+      return handleError(error);
+    }
   }
 };
 

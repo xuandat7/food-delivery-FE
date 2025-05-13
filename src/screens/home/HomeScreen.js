@@ -96,12 +96,8 @@ const HomeScreen = () => {
           <View className="mt-6">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-xl text-[#31343d] font-semibold">
-                Open Restaurants
+                Nhà hàng nổi bật
               </Text>
-              <TouchableOpacity className="flex-row items-center">
-                <Text className="text-base text-[#333333] mr-2">See All</Text>
-                <Entypo name="chevron-right" size={16} color="#333333" />
-              </TouchableOpacity>
             </View>
             <Restaurant />
           </View>

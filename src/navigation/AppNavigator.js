@@ -27,6 +27,7 @@ import RestaurantViewScreen from '../screens/home/RestaurantViewScreen';
 import FilterScreen from '../screens/home/FilterScreen';
 import FoodSearchScreen from '../screens/home/FoodSearchScreen';
 import FoodDetailsScreen from '../screens/home/FoodDetailsScreen';
+import DishDetailScreen from '../screens/home/DishDetailScreen';
 
 // Import category screens
 import AllCategoriesScreen from '../screens/home/AllCategoriesScreen';
@@ -141,6 +142,7 @@ const AppNavigator = () => {
         {/* Category screens */}
         <Stack.Screen name="AllCategories" component={AllCategoriesScreen} />
         <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+        <Stack.Screen name="DishDetail" component={DishDetailScreen} />
         
         {/* Customer screens */}
         <Stack.Screen name="Home" component={HomeScreen} />

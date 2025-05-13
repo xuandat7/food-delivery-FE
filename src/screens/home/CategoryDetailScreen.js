@@ -6,120 +6,98 @@ import api from '../../services/api';
 
 const CategoryDetailScreen = ({ route, navigation }) => {
   const { category } = route.params;
-  const [restaurants, setRestaurants] = useState([]);
+  const [dishes, setDishes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   useEffect(() => {
-    fetchRestaurantsByCategory();
+    fetchDishes();
   }, []);
 
-  const fetchRestaurantsByCategory = async () => {
+  const fetchDishes = async (refresh = false) => {
     try {
-      setLoading(true);
-      // Giả định API trả về nhà hàng theo danh mục
-      // Trong thực tế, cần thêm endpoint API để lấy nhà hàng theo category_id
+      if (refresh) {
+        setRefreshing(true);
+        setPage(0);
+      } else if (!refresh && !hasMoreData) {
+        return;
+      } else {
+        setLoading(true);
+      }
+
+      const currentPage = refresh ? 0 : page;
+      console.log(`Fetching dishes for category: ${category.name} (ID: ${category.id}), page: ${currentPage}`);
       
-      // TODO: Thay thế bằng API thực tế khi có sẵn
-      // const response = await api.restaurant.getByCategory(category.id);
+      const response = await api.dish.getPublicDishByCategory(category.id, currentPage, 10);
       
-      // Sử dụng dữ liệu mẫu tạm thời
-      setTimeout(() => {
-        const mockRestaurants = [
-          {
-            id: 1,
-            name: 'Nhà hàng 1',
-            thumbnail: 'https://picsum.photos/200',
-            rating: 4.5,
-            totalReviews: 120,
-            category: category.name,
-            deliveryTime: '30-45 phút',
-            minOrder: '50.000đ',
-          },
-          {
-            id: 2,
-            name: 'Nhà hàng 2',
-            thumbnail: 'https://picsum.photos/201',
-            rating: 4.2,
-            totalReviews: 95,
-            category: category.name,
-            deliveryTime: '25-40 phút',
-            minOrder: '45.000đ',
-          },
-          {
-            id: 3,
-            name: 'Nhà hàng 3',
-            thumbnail: 'https://picsum.photos/202',
-            rating: 4.7,
-            totalReviews: 150,
-            category: category.name,
-            deliveryTime: '35-50 phút',
-            minOrder: '60.000đ',
-          },
-          {
-            id: 4,
-            name: 'Nhà hàng 4',
-            thumbnail: 'https://picsum.photos/203',
-            rating: 4.0,
-            totalReviews: 85,
-            category: category.name,
-            deliveryTime: '20-35 phút',
-            minOrder: '40.000đ',
-          },
-          {
-            id: 5,
-            name: 'Nhà hàng 5',
-            thumbnail: 'https://picsum.photos/204',
-            rating: 4.3,
-            totalReviews: 110,
-            category: category.name,
-            deliveryTime: '30-45 phút',
-            minOrder: '55.000đ',
-          },
-        ];
+      if (response.success) {
+        console.log(`Got ${response.data.content?.length || 0} dishes`);
         
-        setRestaurants(mockRestaurants);
-        setLoading(false);
-      }, 1000);
+        if (refresh || page === 0) {
+          setDishes(response.data.content || []);
+        } else {
+          setDishes(prevDishes => [...prevDishes, ...(response.data.content || [])]);
+        }
+        
+        // Kiểm tra xem còn dữ liệu không
+        setHasMoreData(currentPage < response.data.totalPages - 1);
+        
+        // Nếu không phải refresh, tăng số trang
+        if (!refresh) {
+          setPage(currentPage + 1);
+        }
+      } else {
+        console.error("Không thể lấy món ăn:", response.message);
+      }
     } catch (error) {
-      console.error("Lỗi khi lấy nhà hàng theo danh mục:", error);
+      console.error("Lỗi khi lấy món ăn:", error);
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleRestaurantPress = (restaurant) => {
-    // Điều hướng đến trang chi tiết nhà hàng
-    navigation.navigate('RestaurantView', { id: restaurant.id });
+  const handleRefresh = () => {
+    fetchDishes(true);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.restaurantItem}
-      onPress={() => handleRestaurantPress(item)}
+  const handleLoadMore = () => {
+    if (!loading && hasMoreData) {
+      fetchDishes();
+    }
+  };
+
+  const handleDishPress = (dish) => {
+    navigation.navigate("DishDetail", { dish });
+  };
+
+  const renderDishItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.dishItem}
+      onPress={() => handleDishPress(item)}
     >
       <Image 
-        source={{ uri: item.thumbnail }} 
-        style={styles.thumbnail}
-        defaultSource={require('../../../assets/icon.png')}
+        source={item.thumbnail ? { uri: item.thumbnail } : require('../../../assets/icon.png')}
+        style={styles.dishImage}
       />
-      <View style={styles.infoContainer}>
-        <Text style={styles.restaurantName}>{item.name}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.rating}>{item.rating}</Text>
-          <Text style={styles.totalReviews}>({item.totalReviews})</Text>
-        </View>
-        <Text style={styles.category}>{item.category}</Text>
-        <View style={styles.deliveryInfoContainer}>
-          <Text style={styles.deliveryInfo}>
-            <Ionicons name="time-outline" size={14} color="#666" /> {item.deliveryTime}
-          </Text>
-          <Text style={styles.deliveryInfo}>
-            <Ionicons name="cash-outline" size={14} color="#666" /> Min {item.minOrder}
-          </Text>
-        </View>
+      <View style={styles.dishInfo}>
+        <Text style={styles.dishName} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.dishDescription} numberOfLines={2}>{item.description || 'Không có mô tả'}</Text>
+        <Text style={styles.dishPrice}>{item.price?.toLocaleString('vi-VN')} ₫</Text>
       </View>
     </TouchableOpacity>
   );
+
+  const renderFooter = () => {
+    if (!loading || refreshing) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#FB6D3A" />
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -128,19 +106,32 @@ const CategoryDetailScreen = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>{category.name}</Text>
-        <View style={{ width: 24 }} /> {/* Để giữ header căn giữa */}
+        <View style={{ width: 24 }} />
       </View>
 
-      {loading ? (
+      {loading && page === 0 ? (
         <ActivityIndicator size="large" color="#FB6D3A" style={styles.loader} />
-      ) : (
+      ) : dishes.length > 0 ? (
         <FlatList
-          data={restaurants}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
+          data={dishes}
+          renderItem={renderDishItem}
+          keyExtractor={(item) => item.id?.toString()}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          ListFooterComponent={renderFooter}
         />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="restaurant-outline" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>Không có món ăn nào trong danh mục này</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
+            <Text style={styles.retryText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </SafeAreaView>
   );
@@ -174,60 +165,69 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
   },
-  restaurantItem: {
+  dishItem: {
     flexDirection: 'row',
     marginBottom: 16,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    overflow: 'hidden',
+    borderRadius: 8,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  thumbnail: {
-    width: 100,
-    height: 100,
+  dishImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
   },
-  infoContainer: {
+  dishInfo: {
     flex: 1,
-    padding: 10,
+    marginLeft: 12,
+    justifyContent: 'space-between',
   },
-  restaurantName: {
+  dishName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#31343d',
-    marginBottom: 4,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  rating: {
-    marginLeft: 4,
+  dishDescription: {
     fontSize: 14,
+    color: '#666',
+    marginVertical: 4,
+  },
+  dishPrice: {
+    fontSize: 15,
     fontWeight: 'bold',
-    color: '#31343d',
+    color: '#FB6D3A',
   },
-  totalReviews: {
-    marginLeft: 4,
-    fontSize: 12,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
     color: '#666',
+    marginTop: 12,
+    textAlign: 'center',
   },
-  category: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+  retryButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#FB6D3A',
+    borderRadius: 8,
   },
-  deliveryInfoContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  retryText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
-  deliveryInfo: {
-    fontSize: 12,
-    color: '#666',
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
 });
 

@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Base URL cho API calls - sử dụng biến môi trường hoặc fallback URL
-const BASE_URL = process.env.API_URL || 'http://192.168.1.45:4000';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
+const BASE_URL = process.env.API_URL || 'http://172.20.10.10:4000';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
 
 // Log API URL
 console.log('Using API URL:', BASE_URL);
@@ -427,6 +427,48 @@ export const categoryAPI = {
     } catch (error) {
       return handleError(error);
     }
+  },
+  
+  /**
+   * Get categories by restaurant ID
+   * @param {number} restaurantId - Restaurant ID
+   * @returns {Promise} - API response
+   */
+  getCategoriesByRestaurant: async (restaurantId) => {
+    try {
+      console.log(`Fetching categories for restaurant ID: ${restaurantId}`);
+      
+      const response = await fetch(`${BASE_URL}/categories/restaurant/${restaurantId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const data = await response.json();
+      console.log('Categories by restaurant API response:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch restaurant categories');
+      }
+      
+      return { success: true, message: 'Restaurant categories fetched successfully', data: data };
+    } catch (error) {
+      console.error('Error fetching restaurant categories:', error);
+      
+      // Mock category data in case of error
+      const mockCategories = [
+        { id: 1, name: "Burger", restaurant_id: restaurantId },
+        { id: 2, name: "Pizza", restaurant_id: restaurantId },
+        { id: 3, name: "Đồ uống", restaurant_id: restaurantId },
+        { id: 4, name: "Món chính", restaurant_id: restaurantId },
+        { id: 5, name: "Tráng miệng", restaurant_id: restaurantId },
+      ];
+      
+      return {
+        success: true,
+        message: 'Using mock category data',
+        data: mockCategories
+      };
+    }
   }
 };
 
@@ -548,7 +590,13 @@ export const restaurantAPI = {
       
       // Mock data in case of error
       const mockRestaurants = [];
-      for (let i = 1; i <= 10; i++) {
+      
+      // Create mock restaurants with types matching the filter options in AllCategories
+      const restaurantTypes = ["Nhà hàng Âu", "Nhà hàng Á", "Đồ ngọt", "Món Việt", "Đồ ăn nhanh"];
+      
+      // Generate 15 mock restaurants with different types
+      for (let i = 1; i <= 15; i++) {
+        const typeIndex = (i % 5); // Distribute types evenly
         mockRestaurants.push({
           id: i,
           name: `Nhà hàng mẫu ${i}`,
@@ -556,12 +604,70 @@ export const restaurantAPI = {
           address: `Địa chỉ nhà hàng ${i}, Hà Nội`,
           phone: `098765432${i}`,
           image_url: `https://picsum.photos/500/300?random=${i}`,
+          type: restaurantTypes[typeIndex],
         });
       }
       
       return {
         success: true,
         message: 'Using mock restaurant data',
+        data: {
+          content: mockRestaurants,
+          totalPages: 1,
+          totalElements: mockRestaurants.length,
+          size: limit,
+          number: page
+        }
+      };
+    }
+  },
+  
+  /**
+   * Get restaurants by type with pagination
+   * @param {string} type - Restaurant type to filter by
+   * @param {number} page - Page number (starting from 0)
+   * @param {number} limit - Results per page
+   * @returns {Promise} - API response
+   */
+  getRestaurantsByType: async (type, page = 0, limit = 10) => {
+    try {
+      console.log(`Fetching restaurants by type: ${type}, page: ${page}, limit: ${limit}`);
+      
+      const response = await fetch(`${BASE_URL}/restaurants/by-type?type=${encodeURIComponent(type)}&page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const data = await response.json();
+      console.log('Restaurants by type API response:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch restaurants by type');
+      }
+      
+      return { success: true, message: 'Restaurants by type fetched successfully', data: data };
+    } catch (error) {
+      console.error('Error fetching restaurants by type:', error);
+      
+      // Mock data in case of error
+      const mockRestaurants = [];
+      
+      // Create 5 mock restaurants of the requested type
+      for (let i = 1; i <= 5; i++) {
+        mockRestaurants.push({
+          id: i,
+          name: `${type} ${i}`,
+          description: `Nhà hàng ${type} số ${i}`,
+          address: `Địa chỉ nhà hàng ${i}, Hà Nội`,
+          phone: `098765432${i}`,
+          image_url: `https://picsum.photos/500/300?random=${i}`,
+          type: type,
+        });
+      }
+      
+      return {
+        success: true,
+        message: 'Using mock restaurant type data',
         data: {
           content: mockRestaurants,
           totalPages: 1,
@@ -731,6 +837,51 @@ export const restaurantAPI = {
     } catch (error) {
       console.error('Add dish error:', error);
       return handleError(error);
+    }
+  },
+  
+  /**
+   * Get restaurant by ID
+   * @param {number} id - Restaurant ID
+   * @returns {Promise} - API response
+   */
+  getRestaurantById: async (id) => {
+    try {
+      console.log(`Fetching restaurant details for ID: ${id}`);
+      
+      // Sử dụng endpoint public mới
+      const response = await fetch(`${BASE_URL}/restaurants/public/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      const data = await response.json();
+      console.log('Restaurant details API response:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch restaurant details');
+      }
+      
+      return { success: true, message: 'Restaurant details fetched successfully', data: data };
+    } catch (error) {
+      console.error('Error fetching restaurant details:', error);
+      
+      // Mock data in case of error
+      const mockRestaurant = {
+        id: id,
+        name: `Nhà hàng ${id}`,
+        description: `Nhà hàng phục vụ đa dạng các món ăn ngon từ Á đến Âu, không gian thoáng đãng, phù hợp cho cả gia đình.`,
+        address: `Số ${id}0 Phố Ẩm Thực, Quận Hoàn Kiếm, Hà Nội`,
+        phone: `098765432${id % 10}`,
+        image_url: `https://picsum.photos/800/400?random=${id}`,
+        rating: (Math.random() * 2 + 3).toFixed(1), // Random rating between 3.0 and 5.0
+      };
+      
+      return {
+        success: true,
+        message: 'Using mock restaurant data',
+        data: mockRestaurant
+      };
     }
   }
 };

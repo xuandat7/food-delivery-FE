@@ -13,13 +13,17 @@ import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect } from 'react';
 import { StyleSheet, ActivityIndicator } from "react-native"; // Thêm ActivityIndicator vào import
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from "../../services/api";
+
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState(""); // State để lưu tên người dùng
+  const [greeting, setGreeting] = useState(""); // State để lưu lời chào theo thời gian
 
   useEffect(() => {
     // Kiểm tra token khi component được mount
-    const checkToken = async () => {
+    const checkTokenAndUserInfo = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
         console.log('Token from storage:', token);
@@ -31,6 +35,19 @@ const HomeScreen = () => {
             routes: [{ name: 'Auth' }],
           });
         } else {
+          // Lấy tên người dùng
+          await fetchUserInfo();
+          
+          // Xác định lời chào dựa vào thời gian
+          const hour = new Date().getHours();
+          if (hour < 12) {
+            setGreeting("buổi sáng");
+          } else if (hour < 18) {
+            setGreeting("buổi chiều");
+          } else {
+            setGreeting("buổi tối");
+          }
+          
           // Token is valid, continue to Home
           setIsLoading(false);
         }
@@ -40,8 +57,48 @@ const HomeScreen = () => {
       }
     };
 
-    checkToken();
+    checkTokenAndUserInfo();
   }, []);
+
+  // Hàm lấy thông tin người dùng
+  const fetchUserInfo = async () => {
+    try {
+      // Đầu tiên kiểm tra xem có thông tin người dùng đã lưu trong AsyncStorage không
+      const userData = await AsyncStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.fullName || user.full_name) {
+          setUserName(user.fullName || user.full_name);
+          return;
+        }
+      }
+      
+      // Nếu không có thông tin trong AsyncStorage, gọi API để lấy
+      const response = await api.user.getProfile();
+      console.log('User profile response:', response);
+      
+      if (response.success && response.data) {
+        // Lưu thông tin người dùng vào AsyncStorage
+        await AsyncStorage.setItem('user', JSON.stringify(response.data));
+        
+        // Lấy tên từ các trường có thể có
+        const name = response.data.fullName || response.data.full_name || response.data.name;
+        if (name) {
+          setUserName(name);
+          
+          // Lưu tên riêng để sử dụng sau này
+          await AsyncStorage.setItem('userName', name);
+        } else {
+          setUserName("bạn");
+        }
+      } else {
+        setUserName("bạn");
+      }
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+      setUserName("bạn");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -81,7 +138,7 @@ const HomeScreen = () => {
 
         {/* Greeting */}
         <View className="px-4 mt-4 mb-3">
-          <Text className="text-xl font-medium">Hey Halal, <Text className="font-bold">Good Afternoon!</Text></Text>
+          <Text className="text-xl font-medium">Xin chào <Text className="font-bold">{userName}</Text>, {greeting}!</Text>
         </View>
 
         <View className="px-4">
@@ -95,7 +152,7 @@ const HomeScreen = () => {
           {/* Open Restaurants Section */}
           <View className="mt-6">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-xl text-[#31343d] font-semibold">
+              <Text style={styles.sectionTitle}>
                 Nhà hàng nổi bật
               </Text>
             </View>
@@ -115,5 +172,11 @@ const styles = StyleSheet.create({
   loadingContainer: {
     backgroundColor: "#fff",
   },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#31343d',
+    letterSpacing: 0.5,
+  }
 });
 export default HomeScreen;

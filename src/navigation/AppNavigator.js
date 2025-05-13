@@ -44,6 +44,9 @@ import EditCart from '../components/cart/EditCart.js'; // Đảm bảo bạn có
 import PaymentMethodScreen from '../components/payment/PaymentMethodScreen.js';
 import PaymentSuccessScreen from '../components/payment/PaymentSuccessScreen';
 
+// Import Type Restaurants Screen
+import TypeRestaurantsScreen from '../screens/home/TypeRestaurantsScreen';
+
 // Create stack navigators
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -138,6 +141,7 @@ const AppNavigator = () => {
         <Stack.Screen name="FoodSearch" component={FoodSearchScreen} />
         <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
         <Stack.Screen name="Filter" component={FilterScreen} />
+        <Stack.Screen name="TypeRestaurants" component={TypeRestaurantsScreen} />
         
         {/* Category screens */}
         <Stack.Screen name="AllCategories" component={AllCategoriesScreen} />

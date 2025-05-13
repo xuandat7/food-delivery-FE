@@ -1,27 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+import api from '../../services/api';
 
 const iconBack = require('../../../assets/icon-back.png');
 const iconFilter = require('../../../assets/icon-filter.png');
-const iconStar = require('../../../assets/icon_star.png');
-const iconDelivery = require('../../../assets/icon.png'); // Thay bằng icon delivery nếu có
-const iconTime = require('../../../assets/icon.png'); // Thay bằng icon time nếu có
 const foodImg = require('../../../assets/icon.png'); // Thay bằng ảnh món ăn nếu có
 const iconCancel = require('../../../assets/icon-cancel.png');
-
-const categories = ['Burger', 'Sandwich', 'Pizza', 'Sanwich'];
-const foods = [
-  { name: "Burger Ferguson", restaurant: "Spicy Restaurant", price: 40 },
-  { name: "Rockin' Burgers", restaurant: "Cafecafachino", price: 40 },
-  { name: "Classic Burger", restaurant: "Spicy Restaurant", price: 45 },
-  { name: "Cheese Burger", restaurant: "Cafecafachino", price: 42 },
-  { name: "Veggie Burger", restaurant: "Spicy Restaurant", price: 38 },
-  { name: "BBQ Burger", restaurant: "Cafecafachino", price: 44 },
-  { name: "Fish Burger", restaurant: "Spicy Restaurant", price: 41 },
-  { name: "Double Burger", restaurant: "Cafecafachino", price: 50 },
-  { name: "Spicy Chicken Burger", restaurant: "Spicy Restaurant", price: 43 },
-  { name: "Mushroom Burger", restaurant: "Cafecafachino", price: 46 },
-];
+const iconStar = require('../../../assets/icon_star.png');
 
 const offerOptions = [
   'Delivery',
@@ -34,11 +20,176 @@ const pricingOptions = ['$', '$$', '$$$'];
 const ratingOptions = [1, 2, 3, 4, 5];
 
 const RestaurantViewScreen = ({ navigation }) => {
+  const route = useRoute();
+  const restaurantId = route.params?.id;
+
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedOffers, setSelectedOffers] = useState([]);
   const [selectedTime, setSelectedTime] = useState('10-15 min');
   const [selectedPricing, setSelectedPricing] = useState('$$');
   const [selectedRating, setSelectedRating] = useState(4);
+
+  // State để lưu dữ liệu từ API
+  const [restaurant, setRestaurant] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [dishes, setDishes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // State để kiểm soát quá trình tải dữ liệu
+  const [dataReady, setDataReady] = useState({
+    restaurant: false,
+    categories: false,
+    dishes: false
+  });
+  
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  useEffect(() => {
+    if (restaurantId) {
+      fetchRestaurantData();
+    } else {
+      setErrorMessage('Không có ID nhà hàng được cung cấp');
+      setLoading(false);
+    }
+  }, [restaurantId]);
+
+  const fetchRestaurantData = async () => {
+    setLoading(true);
+    setErrorMessage(null);
+    
+    try {
+      // Fetch restaurant details
+      const restaurantResponse = await api.restaurant.getRestaurantById(restaurantId);
+      console.log('Restaurant data:', restaurantResponse);
+
+      if (restaurantResponse.success) {
+        setRestaurant(restaurantResponse.data);
+        setDataReady(prev => ({ ...prev, restaurant: true }));
+        
+        // Proceed to fetch categories only after restaurant data is received
+        await fetchCategoriesForRestaurant(restaurantId);
+      } else {
+        throw new Error(restaurantResponse.message || 'Không thể lấy thông tin nhà hàng');
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant data:', error);
+      setErrorMessage('Không thể tải thông tin nhà hàng: ' + (error.message || 'Lỗi không xác định'));
+      setLoading(false);
+    }
+  };
+
+  const fetchCategoriesForRestaurant = async (id) => {
+    try {
+      const categoriesResponse = await api.category.getCategoriesByRestaurant(id);
+      console.log('Categories data:', categoriesResponse);
+
+      if (categoriesResponse.success && categoriesResponse.data?.length > 0) {
+        const validCategories = categoriesResponse.data.filter(cat => cat && cat.id);
+        
+        if (validCategories.length > 0) {
+          setCategories(validCategories);
+          setSelectedCategory(validCategories[0].id);
+          setDataReady(prev => ({ ...prev, categories: true }));
+          
+          // Proceed to fetch dishes only after categories are received
+          await fetchDishesByCategory(validCategories[0].id);
+        } else {
+          // No valid categories, fall back to all categories
+          await fetchAllCategories();
+        }
+      } else {
+        // If no categories available for this restaurant, fetch all categories
+        await fetchAllCategories();
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant categories:', error);
+      // If categories failed, try to get all categories
+      await fetchAllCategories();
+    }
+  };
+
+  const fetchAllCategories = async () => {
+    try {
+      const allCategoriesResponse = await api.category.getAllCategories();
+      console.log('All categories data:', allCategoriesResponse);
+      
+      if (allCategoriesResponse.success && allCategoriesResponse.data?.length > 0) {
+        const validCategories = allCategoriesResponse.data.filter(cat => cat && cat.id);
+        
+        if (validCategories.length > 0) {
+          setCategories(validCategories);
+          setSelectedCategory(validCategories[0].id);
+          setDataReady(prev => ({ ...prev, categories: true }));
+          
+          // Fetch dishes for the first category
+          await fetchDishesByCategory(validCategories[0].id);
+        } else {
+          // Handle case with no valid categories
+          setCategories([]);
+          setDataReady(prev => ({ ...prev, categories: true }));
+          setLoading(false);
+        }
+      } else {
+        // Handle case with no categories
+        setCategories([]);
+        setDataReady(prev => ({ ...prev, categories: true }));
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching all categories:', error);
+      setCategories([]);
+      setDataReady(prev => ({ ...prev, categories: true }));
+      setLoading(false);
+    }
+  };
+
+  const fetchDishesByCategory = async (categoryId) => {
+    if (!categoryId) {
+      console.log('No category ID provided for fetching dishes');
+      setDishes([]);
+      setDataReady(prev => ({ ...prev, dishes: true }));
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const response = await api.dish.getPublicDishByCategory(categoryId);
+      console.log(`Dishes for category ${categoryId}:`, response);
+
+      if (response.success) {
+        // Filter dishes by restaurant ID if needed
+        let dishesData = response.data.content || [];
+        
+        if (restaurantId) {
+          dishesData = dishesData.filter(
+            dish => !dish.restaurantId || dish.restaurantId === parseInt(restaurantId)
+          );
+        }
+        
+        setDishes(dishesData);
+      } else {
+        setDishes([]);
+      }
+      
+      setDataReady(prev => ({ ...prev, dishes: true }));
+    } catch (error) {
+      console.error('Error fetching dishes by category:', error);
+      setDishes([]);
+      setDataReady(prev => ({ ...prev, dishes: true }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategoryPress = (categoryId) => {
+    if (categoryId === selectedCategory) return;
+    
+    setSelectedCategory(categoryId);
+    setDataReady(prev => ({ ...prev, dishes: false }));
+    fetchDishesByCategory(categoryId);
+  };
 
   const toggleOffer = (offer) => {
     setSelectedOffers((prev) =>
@@ -48,6 +199,42 @@ const RestaurantViewScreen = ({ navigation }) => {
     );
   };
 
+  const onFoodPress = (food) => {
+    navigation.navigate('FoodDetails', { id: food.id });
+  };
+
+  // New render condition to ensure all necessary data is available
+  const isDataReady = dataReady.restaurant && dataReady.categories;
+  
+  if (loading && !isDataReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FB6D3A" />
+        <Text style={styles.loadingText}>Đang tải thông tin nhà hàng...</Text>
+      </View>
+    );
+  }
+  
+  if (errorMessage) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{errorMessage}</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={fetchRestaurantData}
+        >
+          <Text style={styles.retryButtonText}>Thử lại</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 24}}>
@@ -56,58 +243,108 @@ const RestaurantViewScreen = ({ navigation }) => {
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Image source={iconBack} style={styles.backIcon} />
           </TouchableOpacity>
-          <Text style={styles.title}>Restaurant View</Text>
+          <Text style={styles.title}>{restaurant?.name || 'Thông tin nhà hàng'}</Text>
           <TouchableOpacity style={styles.moreBtn} onPress={() => setFilterVisible(true)}>
             <Image source={iconFilter} style={styles.filterIcon} />
           </TouchableOpacity>
         </View>
+        
         {/* Restaurant Image */}
         <View style={styles.restaurantImgWrapper}>
-          <View style={styles.restaurantImg} />
+          {restaurant?.image_url ? (
+            <Image 
+              source={{ uri: restaurant.image_url }} 
+              style={styles.restaurantImg}
+              defaultSource={require('../../../assets/icon.png')}
+            />
+          ) : (
+            <View style={styles.restaurantImg} />
+          )}
         </View>
+        
         {/* Restaurant Info */}
         <View style={styles.infoWrapper}>
-          <Text style={styles.restaurantName}>Spicy Restaurant</Text>
+          <Text style={styles.restaurantName}>{restaurant?.name || 'Tên nhà hàng'}</Text>
           <Text style={styles.restaurantDesc}>
-            Maecenas sed diam eget risus varius blandit sit amet non magna. Integer posuere erat a ante venenatis dapibus posuere velit aliquet.
+            {restaurant?.description || restaurant?.address || 'Không có mô tả'}
           </Text>
-          <View style={styles.infoRow}>
-            <Image source={iconStar} style={styles.infoIcon} />
-            <Text style={styles.infoText}>4.7</Text>
-            <Image source={iconDelivery} style={styles.infoIcon} />
-            <Text style={styles.infoText}>Free</Text>
-            <Image source={iconTime} style={styles.infoIcon} />
-            <Text style={styles.infoText}>20 min</Text>
-          </View>
+          
           {/* Categories */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
-            {categories.map((cat, idx) => (
-              <View key={cat+idx} style={[styles.categoryBtn, idx === 0 && styles.categoryBtnActive]}>
-                <Text style={[styles.categoryText, idx === 0 && styles.categoryTextActive]}>{cat}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-        {/* Food List */}
-        <Text style={styles.foodListTitle}>Burger (10)</Text>
-        <View style={styles.foodList}>
-          {foods.map((food, idx) => (
-            <TouchableOpacity key={food.name+idx} style={styles.foodCard} onPress={() => onFoodPress?.(food)}>
-              <View style={{flex: 1, justifyContent: 'flex-start'}}>
-                <Image source={foodImg} style={styles.foodImg} />
-                <Text style={styles.foodName} numberOfLines={2}>{food.name}</Text>
-                <Text style={styles.foodRestaurant} numberOfLines={1}>{food.restaurant}</Text>
-              </View>
-              <View style={styles.foodBottomRow}>
-                <Text style={styles.foodPrice}>${food.price || ''}</Text>
-                <TouchableOpacity style={styles.foodAddBtn}>
-                  <Text style={styles.foodAddBtnText}>+</Text>
+          {!dataReady.categories || categories.length === 0 ? (
+            <ActivityIndicator style={styles.categoryLoader} size="small" color="#FB6D3A" />
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
+              {categories.map((category) => (
+                <TouchableOpacity 
+                  key={`cat-${category.id}`} 
+                  style={[
+                    styles.categoryBtn, 
+                    selectedCategory === category.id && styles.categoryBtnActive
+                  ]}
+                  onPress={() => handleCategoryPress(category.id)}
+                  disabled={loading}
+                >
+                  <Text 
+                    style={[
+                      styles.categoryText, 
+                      selectedCategory === category.id && styles.categoryTextActive
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
+              ))}
+            </ScrollView>
+          )}
         </View>
+        
+        {/* Food List */}
+        <Text style={styles.foodListTitle}>
+          {selectedCategory && categories.length > 0
+            ? `${categories.find(c => c.id === selectedCategory)?.name || 'Món ăn'} (${dishes.length})`
+            : `Món ăn (${dishes.length})`
+          }
+        </Text>
+        
+        {!dataReady.dishes || loading ? (
+          <ActivityIndicator style={styles.dishesLoader} size="large" color="#FB6D3A" />
+        ) : dishes.length === 0 ? (
+          <View style={styles.noContentContainer}>
+            <Text style={styles.noContentText}>Không có món ăn nào trong danh mục này</Text>
+          </View>
+        ) : (
+          <View style={styles.foodList}>
+            {dishes.map((dish) => (
+              <TouchableOpacity 
+                key={`dish-${dish.id}`} 
+                style={styles.foodCard} 
+                onPress={() => onFoodPress(dish)}
+              >
+                <View style={{flex: 1, justifyContent: 'flex-start'}}>
+                  <Image 
+                    source={{ uri: dish.thumbnail || 'https://via.placeholder.com/150' }} 
+                    style={styles.foodImg}
+                    defaultSource={require('../../../assets/icon.png')}
+                  />
+                  <Text style={styles.foodName} numberOfLines={2}>{dish.name}</Text>
+                  <Text style={styles.foodRestaurant} numberOfLines={1}>
+                    {restaurant?.name || dish.restaurant?.name || 'Nhà hàng'}
+                  </Text>
+                </View>
+                <View style={styles.foodBottomRow}>
+                  <Text style={styles.foodPrice}>
+                    {dish.price ? `${new Intl.NumberFormat('vi-VN').format(dish.price)}đ` : ''}
+                  </Text>
+                  <TouchableOpacity style={styles.foodAddBtn}>
+                    <Text style={styles.foodAddBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </ScrollView>
+      
       {/* Filter Modal */}
       <Modal
         visible={filterVisible}
@@ -198,6 +435,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 50,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  categoryLoader: {
+    marginVertical: 15,
+  },
+  dishesLoader: {
+    marginVertical: 50,
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,6 +501,7 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 32,
     backgroundColor: '#bfc5d2',
+    resizeMode: 'cover',
   },
   infoWrapper: {
     marginBottom: 16,
@@ -259,31 +514,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   restaurantDesc: {
-    fontSize: 15,
-    color: '#bfc5d2',
-    fontFamily: 'Sen-Regular',
+    fontSize: 14,
+    color: '#5B5B5E',
+    lineHeight: 21,
     marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  infoIcon: {
-    width: 18,
-    height: 18,
-    marginRight: 4,
-    resizeMode: 'contain',
-  },
-  infoText: {
-    fontSize: 16,
-    color: '#181c2e',
-    fontFamily: 'Sen-Regular',
-    marginRight: 16,
   },
   categoryRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   categoryBtn: {
     backgroundColor: '#fff',
@@ -513,6 +751,53 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     fontFamily: 'Sen-Bold',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#FB6D3A',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  backButton: {
+    borderWidth: 1,
+    borderColor: '#FB6D3A',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  backButtonText: {
+    color: '#FB6D3A',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  noContentContainer: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noContentText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
   },
 });
 

@@ -16,7 +16,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
-import api, { AsyncStorage } from '../../services/api';
+import { userAPI, AsyncStorage } from '../../services';
 
 const EditProfileScreen = () => {
   const navigation = useNavigation();
@@ -89,7 +89,7 @@ const EditProfileScreen = () => {
       console.log('Sending update with data:', updatedData);
       
       // Gọi API cập nhật thông tin người dùng
-      const response = await api.user.updateProfile(userData.id, updatedData);
+      const response = await userAPI.updateProfile(userData.id, updatedData);
       
       if (response.success) {
         Alert.alert('Thành công', 'Thông tin hồ sơ đã được cập nhật');

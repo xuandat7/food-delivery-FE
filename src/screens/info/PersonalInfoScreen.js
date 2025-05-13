@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import api from '../../services/api';
+import { userAPI } from '../../services';
 
 export default function PersonalInfoScreen(props) {
   // Sử dụng navigation từ props nếu có, nếu không thì dùng useNavigation
@@ -32,7 +32,7 @@ export default function PersonalInfoScreen(props) {
     try {
       setLoading(true);
       console.log('Fetching user profile from API...');
-      const response = await api.user.getProfile();
+      const response = await userAPI.getProfile();
       
       if (response.success) {
         // Backend trả về full_name từ fullName trong entity

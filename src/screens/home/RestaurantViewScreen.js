@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Modal, ActivityIndicator, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import api from '../../services/api';
+import { restaurantAPI, categoryAPI, dishAPI, cartAPI } from '../../services';
 
 const iconBack = require('../../../assets/icon-back.png');
 const iconFilter = require('../../../assets/icon-filter.png');
@@ -60,7 +60,7 @@ const RestaurantViewScreen = ({ navigation }) => {
     
     try {
       // Fetch restaurant details
-      const restaurantResponse = await api.restaurant.getRestaurantById(restaurantId);
+      const restaurantResponse = await restaurantAPI.getRestaurantById(restaurantId);
       console.log('Restaurant data:', restaurantResponse);
 
       if (restaurantResponse.success) {
@@ -81,7 +81,7 @@ const RestaurantViewScreen = ({ navigation }) => {
 
   const fetchCategoriesForRestaurant = async (id) => {
     try {
-      const categoriesResponse = await api.category.getCategoriesByRestaurant(id);
+      const categoriesResponse = await categoryAPI.getCategoriesByRestaurant(id);
       console.log('Categories data:', categoriesResponse);
 
       if (categoriesResponse.success && categoriesResponse.data?.length > 0) {
@@ -111,7 +111,7 @@ const RestaurantViewScreen = ({ navigation }) => {
 
   const fetchAllCategories = async () => {
     try {
-      const allCategoriesResponse = await api.category.getAllCategories();
+      const allCategoriesResponse = await categoryAPI.getAllCategories();
       console.log('All categories data:', allCategoriesResponse);
       
       if (allCategoriesResponse.success && allCategoriesResponse.data?.length > 0) {
@@ -155,7 +155,7 @@ const RestaurantViewScreen = ({ navigation }) => {
     
     setLoading(true);
     try {
-      const response = await api.dish.getPublicDishByCategory(categoryId);
+      const response = await dishAPI.getPublicDishByCategory(categoryId);
       console.log(`Dishes for category ${categoryId}:`, response);
 
       if (response.success) {
@@ -206,7 +206,7 @@ const RestaurantViewScreen = ({ navigation }) => {
   // Add this function to handle add-to-cart
   const handleAddToCart = async (dish) => {
     try {
-      const res = await api.addToCart(dish.id, 1);
+      const res = await cartAPI.addToCart(dish.id, 1);
       if (res.success) {
         Alert.alert('Thành công', 'Đã thêm vào giỏ hàng!');
         // Optionally: trigger cart badge update here if you have a context or callback

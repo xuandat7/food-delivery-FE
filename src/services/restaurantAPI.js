@@ -509,6 +509,26 @@ const restaurantAPI = {
   },
 
   /**
+   * Get public restaurant profile by ID
+   * @param {number|string} restaurantId
+   * @returns {Promise} - API response
+   */
+  getPublicProfileById: async (restaurantId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/restaurants/public/${restaurantId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to fetch public restaurant info');
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching public restaurant info:', error);
+      return handleError(error);
+    }
+  },
+
+  /**
    * Update an existing dish
    * @param {number} dishId - ID of the dish to update
    * @param {Object} dishData - Updated dish data
@@ -619,7 +639,57 @@ const restaurantAPI = {
       console.error('Delete dish error:', error);
       return handleError(error);
     }
+  },
+
+  /**
+   * Update restaurant profile
+   * @param {Object} data - Restaurant info to update (expects: id, name, email, phone, address, description, image/avatar)
+   * @returns {Promise} - API response
+   */
+  updateProfile: async (data) => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      if (!token) {
+        return { success: false, message: 'Bạn chưa đăng nhập!', data: null };
+      }
+      if (!data.id) {
+        return { success: false, message: 'Thiếu ID nhà hàng!', data: null };
+      }
+      // Use FormData for PATCH with image
+      const formData = new FormData();
+      if (data.name) formData.append('name', data.name);
+      if (data.email) formData.append('email', data.email);
+      if (data.phone) formData.append('phone', data.phone);
+      if (data.address) formData.append('address', data.address);
+      if (data.description) formData.append('description', data.description);
+      // Accept both avatar and image fields for compatibility
+      if (data.avatar && data.avatar.uri) {
+        const uri = data.avatar.uri;
+        const name = uri.split('/').pop() || 'avatar.jpg';
+        const type = data.avatar.type || 'image/jpeg';
+        formData.append('image', { uri, name, type });
+      } else if (data.image && data.image.uri) {
+        const uri = data.image.uri;
+        const name = uri.split('/').pop() || 'avatar.jpg';
+        const type = data.image.type || 'image/jpeg';
+        formData.append('image', { uri, name, type });
+      }
+      const response = await fetch(`${BASE_URL}/restaurants/${data.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Do not set Content-Type when using FormData
+        },
+        body: formData
+      });
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.message || 'Cập nhật thông tin nhà hàng thất bại');
+      return { success: true, message: 'Cập nhật thông tin nhà hàng thành công', data: resData };
+    } catch (error) {
+      console.error('Update restaurant profile error:', error);
+      return handleError(error);
+    }
   }
 };
 
-export default restaurantAPI; 
+export default restaurantAPI;

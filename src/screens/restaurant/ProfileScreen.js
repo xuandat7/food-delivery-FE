@@ -37,8 +37,8 @@ const ProfileScreen = () => {
     setBalance(0);
   };
 
-  const handlePersonalInfo = () => {
-    navigation.navigate('PersonalInfo');
+  const handlePersonalInfo = async () => {
+    navigation.navigate('RestaurantInfo');
   };
 
   const handleSettings = () => {

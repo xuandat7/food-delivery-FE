@@ -17,19 +17,22 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
 import { userAPI, AsyncStorage } from '../../services';
+import restaurantAPI from '../../services/restaurantAPI';
 
 const EditProfileScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  // Ưu tiên info (restaurant), fallback userData (user)
+  const info = route.params?.info || {};
   const userData = route.params?.userData || {};
-  
-  // Xử lý tên trường bất kỳ (full_name hoặc fullName)
-  const [fullName, setFullName] = useState(userData?.full_name || userData?.fullName || 'Vishal Khadok');
-  const [email, setEmail] = useState(userData?.email || userData?.account?.email || 'hello@halallab.co');
-  const [phone, setPhone] = useState(userData?.phone || '408-841-0926');
-  const [address, setAddress] = useState(userData?.address || '');
+  // Nếu là nhà hàng thì lấy info, nếu là user thì lấy userData
+  const [name, setName] = useState(info.name || userData.full_name || userData.fullName || '');
+  const [email, setEmail] = useState(info.email || userData.email || userData.account?.email || '');
+  const [phone, setPhone] = useState(info.phone || userData.phone || '');
+  const [address, setAddress] = useState(info.address || userData.address || '');
+  const [description, setDescription] = useState(info.description || userData.description || '');
   const [avatar, setAvatar] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Xin quyền truy cập thư viện ảnh khi component được mount
   useEffect(() => {
@@ -123,6 +126,40 @@ const EditProfileScreen = () => {
     }
   };
 
+  const handleSaveRestaurant = async () => {
+    setLoading(true);
+    try {
+      // Build update data for restaurant (do NOT include email)
+      const updateData = {
+        id: info.id,
+        name,
+        phone,
+        address,
+        description
+      };
+      // Attach avatar/image if selected
+      if (avatar && avatar.uri) {
+        updateData.avatar = {
+          uri: avatar.uri,
+          type: avatar.type || 'image/jpeg',
+          name: avatar.fileName || avatar.uri.split('/').pop() || 'avatar.jpg',
+        };
+      }
+      const res = await restaurantAPI.updateProfile(updateData);
+      if (res.success) {
+        Alert.alert('Thành công', 'Cập nhật thông tin thành công!', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('Lỗi', res.message || 'Cập nhật thất bại!');
+      }
+    } catch (e) {
+      Alert.alert('Lỗi', e.message || 'Cập nhật thất bại!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -156,8 +193,8 @@ const EditProfileScreen = () => {
           <Text style={styles.label}>FULL NAME</Text>
           <TextInput
             style={[styles.input, styles.editableInput]}
-            value={fullName}
-            onChangeText={setFullName}
+            value={name}
+            onChangeText={setName}
             placeholder="Enter your full name"
             placeholderTextColor="#000000"
           />
@@ -199,13 +236,25 @@ const EditProfileScreen = () => {
           />
         </View>
 
+        <View style={styles.formField}>
+          <Text style={styles.label}>DESCRIPTION</Text>
+          <TextInput
+            style={[styles.input, styles.editableInput]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Enter description"
+            placeholderTextColor="#000000"
+            multiline
+          />
+        </View>
+
         {/* Save Button */}
         <TouchableOpacity
           style={styles.saveButton}
-          onPress={handleSave}
-          disabled={isLoading}
+          onPress={handleSaveRestaurant}
+          disabled={loading}
         >
-          {isLoading ? (
+          {loading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
             <Text style={styles.saveButtonText}>SAVE</Text>
@@ -312,4 +361,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditProfileScreen; 
+export default EditProfileScreen;

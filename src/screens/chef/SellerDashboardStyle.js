@@ -11,8 +11,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    marginTop: 50,
-    marginBottom: 24,
+    marginTop: 10,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   menuButton: {
     backgroundColor: '#FFFFFF',
@@ -33,7 +35,7 @@ export const styles = StyleSheet.create({
     paddingLeft: 18,
   },
   locationLabel: {
-    color: '#FC6E2A',
+    color: '#3498db',
     fontWeight: 'bold',
     fontSize: 12,
   },
@@ -141,7 +143,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#9B9BA5',
   },
   seeDetails: {
-    color: '#FB6D3A',
+    color: '#3498db',
     fontSize: 14,
     textDecorationLine: 'underline',
   },
@@ -205,21 +207,21 @@ export const styles = StyleSheet.create({
   starIcon: {
     width: 26,
     height: 26,
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     borderRadius: 13,
     marginRight: 5,
   },
   ratingText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#FB6D3A',
+    color: '#3498db',
   },
   totalReviews: {
     fontSize: 14,
     color: '#32343E',
   },
   seeAll: {
-    color: '#FB6D3A',
+    color: '#3498db',
     fontSize: 14,
     textDecorationLine: 'underline',
   },
@@ -314,9 +316,9 @@ export const styles = StyleSheet.create({
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF1F1',
+    backgroundColor: '#E6F7FF',
     borderWidth: 1.5,
-    borderColor: '#FF7621',
+    borderColor: '#3498db',
     borderRadius: 24, 
     marginBottom: 5,
     position: 'relative',
@@ -325,7 +327,7 @@ export const styles = StyleSheet.create({
   plusIcon: {
     width: 24,
     height: 24,
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     borderRadius: 12,
   },
   bellIcon: {

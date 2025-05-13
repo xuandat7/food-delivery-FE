@@ -100,7 +100,7 @@ const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF7621" />
+      <StatusBar barStyle="light-content" backgroundColor="#3498db" />
       
       {/* Header Section with Balance */}
       <View style={styles.headerSection}>
@@ -132,7 +132,7 @@ const ProfileScreen = () => {
       <View style={styles.menuSection}>
         <TouchableOpacity style={styles.menuItem} onPress={handlePersonalInfo}>
           <View style={[styles.iconContainer, styles.userIcon]}>
-            <AntDesign name="user" size={22} color="#FF7621" />
+            <AntDesign name="user" size={22} color="#3498db" />
           </View>
           <Text style={styles.menuText}>Personal Info</Text>
           <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
@@ -151,7 +151,7 @@ const ProfileScreen = () => {
       <View style={styles.menuSection}>
         <TouchableOpacity style={styles.menuItem} onPress={handleWithdrawalHistory}>
           <View style={[styles.iconContainer, styles.withdrawalIcon]}>
-            <AntDesign name="creditcard" size={22} color="#FF7621" />
+            <AntDesign name="creditcard" size={22} color="#3498db" />
           </View>
           <Text style={styles.menuText}>Withdrawal History</Text>
           <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F6F6F6',
   },
   headerSection: {
-    backgroundColor: '#FF7621',
+    backgroundColor: '#3498db',
     paddingHorizontal: 24,
     paddingTop: 50,
     paddingBottom: 30,
@@ -292,13 +292,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userIcon: {
-    backgroundColor: 'rgba(255, 118, 33, 0.1)',
+    backgroundColor: 'rgba(52, 152, 219, 0.1)',
   },
   settingsIcon: {
     backgroundColor: 'rgba(79, 70, 229, 0.1)',
   },
   withdrawalIcon: {
-    backgroundColor: 'rgba(255, 118, 33, 0.1)',
+    backgroundColor: 'rgba(52, 152, 219, 0.1)',
   },
   ordersIcon: {
     backgroundColor: 'rgba(56, 189, 248, 0.1)',

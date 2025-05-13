@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { restaurantAPI } from '../../services';
+import { Ionicons } from '@expo/vector-icons';
 
-// Dummy images/icons, replace with your assets or pass as props
 const dummyIcon = require('../../../assets/icon.png');
 const dummySearch = require('../../../assets/icon-search.png');
 const dummyBack = require('../../../assets/icon-back.png');
@@ -123,9 +123,10 @@ const Search = ({
                     <Text style={styles.restaurantType}>{restaurant.type}</Text>
                   )}
                   {restaurant.address && (
-                    <Text style={styles.restaurantAddress} numberOfLines={1}>
-                      {restaurant.address}
-                    </Text>
+                    <View style={styles.locationContainer}>
+                      <Ionicons name="location" size={14} color="#888" />
+                      <Text style={styles.locationText}>{restaurant.address}</Text>
+                    </View>
                   )}
                 </View>
               </TouchableOpacity>
@@ -156,9 +157,10 @@ const Search = ({
                   <View style={{flex:1}}>
                     <Text style={styles.restaurantName}>{restaurant.name}</Text>
                     {restaurant.address && (
-                      <Text style={styles.restaurantAddress} numberOfLines={1}>
-                        {restaurant.address}
-                      </Text>
+                      <View style={styles.locationContainer}>
+                        <Ionicons name="location" size={14} color="#888" />
+                        <Text style={styles.locationText}>{restaurant.address}</Text>
+                      </View>
                     )}
                     {restaurant.type && (
                       <Text style={styles.restaurantType}>{restaurant.type}</Text>
@@ -278,14 +280,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Sen-Regular',
     fontWeight: '400',
   },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#888',
+    marginLeft: 4,
+  },
   restaurantType: {
     fontSize: 14,
     color: '#666',
-    marginTop: 4,
-  },
-  restaurantAddress: {
-    fontSize: 14,
-    color: '#888',
     marginTop: 4,
   },
   loader: {
@@ -300,4 +307,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Search; 
+export default Search;

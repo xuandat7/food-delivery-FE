@@ -32,26 +32,11 @@ export const Restaurant = () => {
         setRestaurants(shuffledRestaurants.slice(0, 5));
       } else {
         console.error('Failed to fetch restaurants:', response.message);
-        setRestaurants([
-          {
-            id: 1,
-            name: "Nhà hàng Hải Sản Fresh",
-            address: "123 Đường Láng, Đống Đa, Hà Nội",
-            image_url: "https://picsum.photos/700/300?random=1",
-          }
-        ]);
+        setRestaurants([]);
       }
     } catch (error) {
       console.error('Error fetching restaurants:', error);
-      setRestaurants([
-        {
-          id: 1,
-          name: "Nhà hàng Hải Sản Fresh",
-          address: "123 Đường Láng, Đống Đa, Hà Nội",
-          image_url: "https://picsum.photos/700/300?random=1",
-        },
-        
-      ]);
+      setRestaurants([]);
     } finally {
       setLoading(false);
     }

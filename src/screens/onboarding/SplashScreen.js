@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 const SplashScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ứng Dụng Giao Đồ Ăn</Text>
+      <Text style={styles.title}>Ứng Dụng Đặt đồ ăn</Text>
     </View>
   );
 };

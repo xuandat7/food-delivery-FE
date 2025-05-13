@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,10 @@ import {
   Image,
   Platform,
   KeyboardAvoidingView,
+  Keyboard,
+  Dimensions,
+  UIManager,
+  findNodeHandle
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -29,6 +33,17 @@ const EditFoodScreen = ({ route, navigation }) => {
   const [image, setImage] = useState(null);
   const [categoryList, setCategoryList] = useState([]);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  
+  // Keyboard states
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Input refs
+  const nameRef = useRef(null);
+  const priceRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const categoryRef = useRef(null);
+  const scrollViewRef = useRef(null);
 
   // Tạo danh sách danh mục mẫu
   const defaultCategories = [
@@ -38,6 +53,62 @@ const EditFoodScreen = ({ route, navigation }) => {
     'Đồ uống',
     'Đặc sản'
   ];
+  
+  // Keyboard listeners to adjust scroll
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+  
+  // Handle focused input to ensure it's visible
+  const handleInputFocus = (fieldRef) => {
+    if (!fieldRef?.current) return;
+    
+    // Đảm bảo mã này chỉ chạy sau khi component đã render
+    setTimeout(() => {
+      const nodeHandle = findNodeHandle(fieldRef.current);
+      if (!nodeHandle) return;
+      
+      // Tính toán vị trí của ô nhập
+      UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
+        // Tính toán vị trí của đáy ô nhập
+        const inputBottom = pageY + height;
+        
+        // Tính toán vị trí đỉnh của bàn phím
+        const screenHeight = Dimensions.get('window').height;
+        const keyboardTop = screenHeight - keyboardHeight;
+        
+        // Thêm khoảng cách để dễ nhìn
+        const paddingForVisibility = 20;
+        
+        // Chỉ cuộn nếu ô nhập bị che bởi bàn phím
+        if (inputBottom + paddingForVisibility > keyboardTop) {
+          // Cuộn chính xác đến vị trí của ô nhập liệu
+          scrollViewRef.current?.scrollTo({ 
+            y: pageY - 100, // Cuộn ô nhập lên vị trí cách đỉnh màn hình 100px
+            animated: true 
+          });
+        }
+      });
+    }, 100);
+  };
 
   useEffect(() => {
     if (isEditing && foodItem) {
@@ -228,6 +299,9 @@ const EditFoodScreen = ({ route, navigation }) => {
         <ScrollView 
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          ref={scrollViewRef}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           {/* Header */}
           <View style={styles.header}>
@@ -271,6 +345,10 @@ const EditFoodScreen = ({ route, navigation }) => {
                 onChangeText={setName}
                 placeholder="Nhập tên món ăn"
                 placeholderTextColor="#999"
+                ref={nameRef}
+                returnKeyType="next"
+                onSubmitEditing={() => priceRef.current?.focus()}
+                onFocus={() => handleInputFocus(nameRef)}
               />
             </View>
             
@@ -284,6 +362,10 @@ const EditFoodScreen = ({ route, navigation }) => {
                 placeholder="Nhập giá"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
+                ref={priceRef}
+                returnKeyType="next"
+                onSubmitEditing={() => categoryRef.current?.focus()}
+                onFocus={() => handleInputFocus(priceRef)}
               />
             </View>
             
@@ -293,6 +375,8 @@ const EditFoodScreen = ({ route, navigation }) => {
               <TouchableOpacity 
                 style={styles.dropdownButton}
                 onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                ref={categoryRef}
+                onFocus={() => handleInputFocus(categoryRef)}
               >
                 <Text style={styles.dropdownButtonText}>
                   {category || 'Chọn danh mục'}
@@ -313,6 +397,7 @@ const EditFoodScreen = ({ route, navigation }) => {
                       onPress={() => {
                         setCategory(item);
                         setShowCategoryDropdown(false);
+                        descriptionRef.current?.focus();
                       }}
                     >
                       <Text style={[
@@ -339,6 +424,8 @@ const EditFoodScreen = ({ route, navigation }) => {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
+                ref={descriptionRef}
+                onFocus={() => handleInputFocus(descriptionRef)}
               />
             </View>
             

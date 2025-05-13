@@ -18,8 +18,26 @@ import {
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
-import * as ImagePicker from 'expo-image-picker';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import * as ImagePicker from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
 import api from '../../services/api';
+
+// Ingredient component for display of selectable ingredients
+const IngredientOption = ({ name, icon, selected, onSelect }) => {
+  return (
+    <TouchableOpacity 
+      style={[styles.ingredientOption, selected && styles.selectedIngredientOption]} 
+      onPress={onSelect}
+    >
+      <View style={[styles.ingredientIcon, selected && styles.selectedIngredientIcon]}>
+        {icon}
+      </View>
+      <Text style={[styles.ingredientName, selected && styles.selectedIngredientName]}>{name}</Text>
+    </TouchableOpacity>
+  );
+};
 
 const AddNewItemsScreen = () => {
   const navigation = useNavigation();
@@ -36,6 +54,10 @@ const AddNewItemsScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [pickupSelected, setPickupSelected] = useState(true);
+  const [deliverySelected, setDeliverySelected] = useState(false);
+  const [images, setImages] = useState([]);
+  const [errors, setErrors] = useState({});
   
   // Populate form with data when editing
   useEffect(() => {
@@ -164,113 +186,151 @@ const AddNewItemsScreen = () => {
     }
   };
 
-  // Hàm chọn ảnh từ thư viện
-  const pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-      });
-
-      // Ghi log cấu trúc dữ liệu trả về từ image picker để debug
-      console.log('ImagePicker result structure:', JSON.stringify(result));
-
-      if (!result.canceled) {
-        console.log('Selected asset:', JSON.stringify(result.assets[0]));
-        setImage(result.assets[0]);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Lỗi', 'Không thể chọn ảnh. Vui lòng thử lại.');
+  const validateForm = () => {
+    const newErrors = {};
+    if (!itemName.trim()) {
+      newErrors.itemName = 'Item name is required';
     }
+    if (!price.trim()) {
+      newErrors.price = 'Price is required';
+    } else if (isNaN(price) || parseFloat(price) <= 0) {
+      newErrors.price = 'Please enter a valid price';
+    }
+    if (!details.trim()) {
+      newErrors.details = 'Details are required';
+    }
+    if (images.length === 0) {
+      newErrors.images = 'At least one image is required';
+    }
+    if (selectedBasicIngredients.length === 0) {
+      newErrors.ingredients = 'Please select at least one ingredient';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  const toggleBasicIngredient = (name) => {
+    if (selectedBasicIngredients.includes(name)) {
+      setSelectedBasicIngredients(selectedBasicIngredients.filter(item => item !== name));
+    } else {
+      setSelectedBasicIngredients([...selectedBasicIngredients, name]);
+    }
+  };
+  
+  const toggleFruit = (name) => {
+    if (selectedFruits.includes(name)) {
+      setSelectedFruits(selectedFruits.filter(item => item !== name));
+    } else {
+      setSelectedFruits([...selectedFruits, name]);
+    }
+  };
+
+  const handleImagePicker = () => {
+    const options = {
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 1000,
+      maxWidth: 1000,
+    };
+
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.error) {
+        Alert.alert('Error', 'Error picking image');
+      } else {
+        const newImage = {
+          uri: response.assets[0].uri,
+          type: response.assets[0].type,
+          name: response.assets[0].fileName,
+        };
+        setImages([...images, newImage]);
+      }
+    });
+  };
+
+  const removeImage = (index) => {
+    const newImages = [...images];
+    newImages.splice(index, 1);
+    setImages(newImages);
   };
 
   const handleBackPress = () => {
-    navigation.dispatch(CommonActions.goBack());
+    if (itemName || price || details || images.length > 0) {
+      Alert.alert(
+        'Discard Changes?',
+        'You have unsaved changes. Do you want to discard them?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => navigation.dispatch(CommonActions.goBack()),
+          },
+        ]
+      );
+    } else {
+      navigation.dispatch(CommonActions.goBack());
+    }
   };
   
   const handleSaveChanges = async () => {
-    // Validate inputs
-    if (!itemName.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên món ăn');
+    if (!validateForm()) {
       return;
     }
-    
-    if (!price.trim() || isNaN(parseFloat(price))) {
-      Alert.alert('Lỗi', 'Vui lòng nhập giá hợp lệ');
-      return;
-    }
-    
-    if (!selectedCategory) {
-      Alert.alert('Lỗi', 'Vui lòng chọn danh mục');
-      return;
-    }
-    
+
+    setLoading(true);
     try {
-      setLoading(true);
+      // Here you would typically upload images and save the item data
+      // For now, we'll simulate a network request
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Prepare dish data
-      const dishData = {
-        name: itemName,
-        price: parseFloat(price),
-        description: details,
-        category: selectedCategory,
-        image: image
-      };
-      
-      // If editing, add ID to request
-      if (isEditing && editingFood) {
-        dishData.id = editingFood.id;
-      }
-      
-      // Call API to add/update dish
-      const response = isEditing 
-        ? await api.restaurant.updateDish(editingFood.id, dishData)
-        : await api.restaurant.addDish(dishData);
-      
-      if (response.success) {
-        Alert.alert(
-          isEditing ? 'Thành công' : 'Thành công', 
-          isEditing ? 'Cập nhật món ăn thành công' : 'Thêm món ăn mới thành công', 
-          [{ text: 'OK', onPress: () => navigation.navigate('MyFood') }]
-        );
-      } else {
-        Alert.alert('Lỗi', response.message || (isEditing ? 'Không thể cập nhật món ăn' : 'Không thể thêm món ăn'));
-      }
+      Alert.alert(
+        'Success',
+        'Item has been saved successfully',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.dispatch(CommonActions.goBack()),
+          },
+        ]
+      );
     } catch (error) {
-      console.error(isEditing ? 'Error updating dish:' : 'Error adding dish:', error);
-      Alert.alert('Lỗi', isEditing ? 'Đã xảy ra lỗi khi cập nhật món ăn' : 'Đã xảy ra lỗi khi thêm món ăn');
+      Alert.alert('Error', 'Failed to save item. Please try again.');
     } finally {
       setLoading(false);
     }
   };
   
   const handleReset = () => {
-    if (isEditing && editingFood) {
-      // Reset to original values
-      setItemName(editingFood.name || '');
-      setPrice(editingFood.price ? editingFood.price.toString() : '');
-      setDetails(editingFood.description || '');
-      setSelectedCategory(editingFood.category || '');
-      if (editingFood.thumbnail) {
-        setImage({ uri: editingFood.thumbnail });
-      } else {
-        setImage(null);
-      }
-    } else {
-      // Clear all fields
-      setItemName('');
-      setPrice('');
-      setDetails('');
-      setImage(null);
-      if (categories.length > 0) {
-        setSelectedCategory(categories[0]);
-      } else {
-        setSelectedCategory('');
-      }
-    }
+    Alert.alert(
+      'Reset Form',
+      'Are you sure you want to reset all fields?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            setItemName('');
+            setPrice('');
+            setDetails('');
+            setSelectedBasicIngredients([]);
+            setSelectedFruits([]);
+            setImages([]);
+            setErrors({});
+            setPickupSelected(true);
+            setDeliverySelected(false);
+          },
+        },
+      ]
+    );
   };
   
   const renderCategoryItem = ({ item }) => (
@@ -310,12 +370,18 @@ const AddNewItemsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>TÊN MÓN ĂN</Text>
           <TextInput 
-            style={styles.textInput}
+            style={[styles.textInput, errors.itemName && styles.inputError]}
             value={itemName}
-            onChangeText={setItemName}
+            onChangeText={(text) => {
+              setItemName(text);
+              if (errors.itemName) {
+                setErrors({...errors, itemName: null});
+              }
+            }}
             placeholder="Nhập tên món ăn"
             placeholderTextColor="#A0A0A0"
           />
+          {errors.itemName && <Text style={styles.errorText}>{errors.itemName}</Text>}
         </View>
         
         {/* Category Selector */}
@@ -381,42 +447,111 @@ const AddNewItemsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>TẢI LÊN HÌNH ẢNH</Text>
           <View style={styles.uploadContainer}>
-            {image ? (
-              <View style={styles.imagePreviewContainer}>
-                <Image 
-                  source={{ uri: image.uri }} 
-                  style={styles.imagePreview} 
-                />
+            {images.map((image, index) => (
+              <View key={index} style={styles.imageContainer}>
+                <Image source={{ uri: image.uri }} style={styles.uploadedImage} />
                 <TouchableOpacity 
                   style={styles.removeImageButton}
-                  onPress={() => setImage(null)}
+                  onPress={() => removeImage(index)}
                 >
-                  <Ionicons name="close-circle" size={24} color="#3498db" />
+                  <Ionicons name="close-circle" size={24} color="#FF4444" />
                 </TouchableOpacity>
               </View>
-            ) : (
-              <View style={styles.uploadedImage} />
+            ))}
+            {images.length < 3 && (
+              <TouchableOpacity style={styles.uploadButton} onPress={handleImagePicker}>
+                <Ionicons name="cloud-upload-outline" size={24} color="#6B63F6" />
+                <Text style={styles.uploadText}>Thêm ảnh</Text>
+              </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-              <Ionicons name="cloud-upload-outline" size={24} color="#6B63F6" />
-              <Text style={styles.uploadText}>Thêm ảnh</Text>
-            </TouchableOpacity>
           </View>
+          {errors.images && <Text style={styles.errorText}>{errors.images}</Text>}
         </View>
         
         {/* Price */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>GIÁ</Text>
           <View style={styles.priceSection}>
-            <TextInput 
-              style={styles.priceInput}
-              value={price}
-              onChangeText={setPrice}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#A0A0A0"
-            />
-            <Text style={styles.currencyText}>VNĐ</Text>
+            <View style={{ flex: 1 }}>
+              <TextInput 
+                style={[styles.priceInput, errors.price && styles.inputError]}
+                value={price}
+                onChangeText={(text) => {
+                  setPrice(text);
+                  if (errors.price) {
+                    setErrors({...errors, price: null});
+                  }
+                }}
+                placeholder="0"
+                keyboardType="numeric"
+                placeholderTextColor="#A0A0A0"
+              />
+              {errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
+            </View>
+            <View style={styles.deliveryOptions}>
+              <View style={styles.checkboxOption}>
+                <TouchableOpacity 
+                  style={[styles.checkbox, pickupSelected && styles.checkboxSelected]}
+                  onPress={() => setPickupSelected(!pickupSelected)}
+                >
+                  {pickupSelected && <Feather name="check" size={14} color="#FB6D3A" />}
+                </TouchableOpacity>
+                <Text style={styles.checkboxLabel}>Pick up</Text>
+              </View>
+              
+              <View style={styles.checkboxOption}>
+                <TouchableOpacity 
+                  style={[styles.checkbox, deliverySelected && styles.checkboxSelected]}
+                  onPress={() => setDeliverySelected(!deliverySelected)}
+                >
+                  {deliverySelected && <Feather name="check" size={14} color="#FB6D3A" />}
+                </TouchableOpacity>
+                <Text style={styles.checkboxLabel}>Delivery</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        
+        {/* Ingredients */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>INGRIDENTS</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.seeAllText}>Basic</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllButton}>See All <Ionicons name="chevron-down" size={12} color="#A0A0A0" /></Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.ingredientsContainer}>
+            {basicIngredients.map((ingredient, index) => (
+              <IngredientOption 
+                key={index}
+                name={ingredient.name} 
+                icon={ingredient.icon}
+                selected={selectedBasicIngredients.includes(ingredient.name)}
+                onSelect={() => toggleBasicIngredient(ingredient.name)}
+              />
+            ))}
+          </View>
+          {errors.ingredients && <Text style={styles.errorText}>{errors.ingredients}</Text>}
+        </View>
+        
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.seeAllText}>Fruit</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllButton}>See All <Ionicons name="chevron-down" size={12} color="#A0A0A0" /></Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.ingredientsContainer}>
+            {fruits.map((fruit, index) => (
+              <IngredientOption 
+                key={index}
+                name={fruit.name} 
+                icon={fruit.icon}
+                selected={selectedFruits.includes(fruit.name)}
+                onSelect={() => toggleFruit(fruit.name)}
+              />
+            ))}
           </View>
         </View>
         
@@ -424,28 +559,32 @@ const AddNewItemsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>MÔ TẢ</Text>
           <TextInput 
-            style={styles.detailsInput}
+            style={[styles.detailsInput, errors.details && styles.inputError]}
             value={details}
-            onChangeText={setDetails}
+            onChangeText={(text) => {
+              setDetails(text);
+              if (errors.details) {
+                setErrors({...errors, details: null});
+              }
+            }}
             placeholder="Nhập mô tả món ăn"
             placeholderTextColor="#A0A0A0"
             multiline
             textAlignVertical="top"
           />
+          {errors.details && <Text style={styles.errorText}>{errors.details}</Text>}
         </View>
         
         {/* Save Button */}
         <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.disabledButton]}
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSaveChanges}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.saveButtonText}>
-              {isEditing ? 'CẬP NHẬT' : 'THÊM MÓN ĂN'}
-            </Text>
+            <Text style={styles.saveButtonText}>SAVE CHANGES</Text>
           )}
         </TouchableOpacity>
         
@@ -466,7 +605,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    marginTop: 10,
+    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
@@ -478,7 +617,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 0,
   },
   pageTitle: {
     fontSize: 17,
@@ -491,7 +629,7 @@ const styles = StyleSheet.create({
   resetButton: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#3498db',
+    color: '#FB6D3A',
   },
   content: {
     flex: 1,
@@ -506,6 +644,22 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  seeAllText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginRight: 'auto',
+  },
+  seeAllButton: {
+    fontSize: 14,
+    color: '#A0A0A0',
+  },
   textInput: {
     height: 50,
     borderWidth: 1,
@@ -514,6 +668,155 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#333',
+  },
+  inputError: {
+    borderColor: '#FF4444',
+  },
+  errorText: {
+    color: '#FF4444',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  uploadContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  imageContainer: {
+    position: 'relative',
+    marginRight: 16,
+    marginBottom: 16,
+  },
+  uploadedImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+  },
+  uploadButton: {
+    width: 100,
+    height: 100,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    marginBottom: 16,
+  },
+  uploadText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#6B63F6',
+  },
+  priceSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  priceInput: {
+    width: '100%',
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#333',
+  },
+  deliveryOptions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  checkboxOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#FFF1F1',
+    borderColor: '#FB6D3A',
+  },
+  checkboxLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  ingredientsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  ingredientOption: {
+    width: '16%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  selectedIngredientOption: {
+    opacity: 1,
+  },
+  ingredientIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFF1F1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  selectedIngredientIcon: {
+    backgroundColor: '#FB6D3A',
+  },
+  ingredientName: {
+    fontSize: 11,
+    color: '#333',
+    textAlign: 'center',
+  },
+  selectedIngredientName: {
+    color: '#FB6D3A',
+    fontWeight: '500',
+  },
+  detailsInput: {
+    height: 120,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#333',
+  },
+  saveButton: {
+    height: 62,
+    backgroundColor: '#FB6D3A',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  saveButtonDisabled: {
+    opacity: 0.7,
+  },
+  saveButtonText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
   categorySelector: {
     height: 50,
@@ -565,96 +868,6 @@ const styles = StyleSheet.create({
   categoryItemText: {
     fontSize: 16,
     color: '#333',
-  },
-  uploadContainer: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  uploadedImage: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#A0B6C7',
-    borderRadius: 10,
-    marginRight: 16,
-  },
-  imagePreviewContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-    marginRight: 16,
-    position: 'relative',
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 10,
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: -10,
-    right: -10,
-    backgroundColor: 'white',
-    borderRadius: 12,
-  },
-  uploadButton: {
-    width: 100,
-    height: 100,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  uploadText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#6B63F6',
-  },
-  priceSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priceInput: {
-    width: '50%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#333',
-  },
-  currencyText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  detailsInput: {
-    height: 120,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
-  },
-  saveButton: {
-    height: 62,
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  disabledButton: {
-    backgroundColor: '#7fc7f2',
-  },
-  saveButtonText: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#FFFFFF',
   },
 });
 

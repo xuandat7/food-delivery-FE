@@ -9,30 +9,11 @@ import {
   ScrollView,
   Image
 } from 'react-native';
-import { useNavigation, useIsFocused, CommonActions  } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import COLORS from '../../constants/colors';
-
-
-const IngredientItem = ({ name, icon, isAllergy }) => {
-  return (
-    <View style={styles.ingredientItem}>
-      <View style={styles.ingredientCircle}>
-        <View style={styles.iconWrapper}>
-          {icon}
-        </View>
-      </View>
-      <Text style={styles.ingredientName}>
-        {name}
-        {isAllergy && <Text style={styles.allergyText}>{"\n"}(Allergy)</Text>}
-      </Text>
-    </View>
-  );
-};
 
 const ChefFoodDetailsScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -42,10 +23,10 @@ const ChefFoodDetailsScreen = ({ route }) => {
   const isFocused = useIsFocused();
 
   useEffect(() => {
-      if (isFocused) {
-        setActiveTab('menu');
-      }
-    }, [isFocused]);
+    if (isFocused) {
+      setActiveTab('menu');
+    }
+  }, [isFocused]);
   
   const handleBackPress = () => {
     navigation.goBack();
@@ -53,27 +34,13 @@ const ChefFoodDetailsScreen = ({ route }) => {
   
   const handleEditPress = () => {
     // Navigate to edit screen with the food item data
-    // This functionality can be implemented later
-    console.log('Edit button pressed');
+    navigation.navigate('AddNewItemsScreen', { 
+      isEditing: true, 
+      foodItem: foodItem 
+    });
   };
 
   // Navigation handlers for bottom tab bar
-  const navigateToDashboard = () => {
-    navigation.navigate('SellerDashboard');
-  };
-
-  const navigateToFoodList = () => {
-    navigation.navigate('MyFoodScreen');
-  };
-
-  const navigateToAddNewItem = () => {
-    navigation.navigate('AddNewItemsScreen');
-  };
-
-  const navigateToRunningOrders = () => {
-    navigation.navigate('RunningOrdersScreen');
-  };
-
   const handleTabPress = (tabName) => {
     if (tabName === 'home') {
       navigation.navigate('SellerDashboard');
@@ -88,19 +55,6 @@ const ChefFoodDetailsScreen = ({ route }) => {
     }
   };
 
-  // Mock ingredients data (would come from API in a real app)
-  const ingredients = [
-    { id: '1', name: 'Salt', icon: <MaterialCommunityIcons name="shaker-outline" size={20} color={COLORS.primary} /> },
-    { id: '2', name: 'Chicken', icon: <MaterialCommunityIcons name="food-drumstick-outline" size={20} color={COLORS.primary} /> },
-    { id: '3', name: 'Onion', icon: <MaterialCommunityIcons name="food-apple-outline" size={20} color={COLORS.primary} />, isAllergy: true },
-    { id: '4', name: 'Garlic', icon: <MaterialCommunityIcons name="food-variant" size={20} color={COLORS.primary} /> },
-    { id: '5', name: 'Peppers', icon: <MaterialCommunityIcons name="chili-mild" size={20} color={COLORS.primary} />, isAllergy: true },
-    { id: '6', name: 'Ginger', icon: <MaterialCommunityIcons name="food-apple" size={20} color={COLORS.primary} /> },
-    { id: '7', name: 'Broccoli', icon: <MaterialCommunityIcons name="food-croissant" size={20} color={COLORS.primary} /> },
-    { id: '8', name: 'Orange', icon: <MaterialCommunityIcons name="fruit-citrus" size={20} color={COLORS.primary} /> },
-    { id: '9', name: 'Walnut', icon: <MaterialCommunityIcons name="food-nut" size={20} color={COLORS.primary} /> }
-  ];
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -113,79 +67,48 @@ const ChefFoodDetailsScreen = ({ route }) => {
         >
           <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>Food Details</Text>
+        <Text style={styles.pageTitle}>Chi tiết món ăn</Text>
         <TouchableOpacity 
           style={styles.editButton}
           onPress={handleEditPress}
         >
-          <Text style={styles.editButtonText}>EDIT</Text>
+          <Text style={styles.editButtonText}>SỬA</Text>
         </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.scrollView}>
         {/* Food Image */}
         <View style={styles.foodImageContainer}>
-          {/* Food image placeholder */}
-          <View style={styles.foodImage} />
-          
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Breakfast</Text>
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Delivery</Text>
-            </View>
-          </View>
-          
-          {/* Pagination indicator */}
-          <View style={styles.pagination}>
-            <View style={styles.paginationDot} />
-            <View style={styles.paginationDot} />
-            <View style={[styles.paginationDot, styles.activeDot]} />
-            <View style={styles.paginationDot} />
-            <View style={styles.paginationDot} />
-          </View>
+          {foodItem.thumbnail ? (
+            <Image 
+              source={{ uri: foodItem.thumbnail }}
+              style={styles.foodImage}
+              defaultSource={require('../../../assets/icon.png')}
+            />
+          ) : (
+            <View style={styles.foodImage} />
+          )}
         </View>
         
         {/* Food Details */}
         <View style={styles.detailsContainer}>
           <Text style={styles.foodName}>{foodItem.name}</Text>
-          <Text style={styles.foodPrice}>${foodItem.price}</Text>
+          <Text style={styles.foodPrice}>
+            {foodItem.price ? new Intl.NumberFormat('vi-VN').format(foodItem.price) + 'đ' : 'Chưa có giá'}
+          </Text>
           
-          <View style={styles.detailsRow}>
-            <View style={styles.locationContainer}>
-              <Ionicons name="location-sharp" size={14} color="#AFAFAF" />
-              <Text style={styles.locationText}>Kentucky 39495</Text>
+          <View style={styles.categoryContainer}>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{foodItem.category || 'Không phân loại'}</Text>
             </View>
-            
-            <View style={styles.ratingsContainer}>
-              <FontAwesome name="star" size={14} color={COLORS.primary} />
-              <Text style={styles.ratingText}>{foodItem.rating}</Text>
-              <Text style={styles.reviewText}>({foodItem.reviews} Reviews)</Text>
-            </View>
-          </View>
-          
-          <View style={styles.separator} />
-          
-          {/* Ingredients */}
-          <Text style={styles.sectionTitle}>INGREDIENTS</Text>
-          <View style={styles.ingredientsContainer}>
-            {ingredients.map((ingredient) => (
-              <IngredientItem 
-                key={ingredient.id}
-                name={ingredient.name}
-                icon={ingredient.icon}
-                isAllergy={ingredient.isAllergy}
-              />
-            ))}
           </View>
           
           <View style={styles.separator} />
           
           {/* Description */}
-          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.sectionTitle}>Mô tả</Text>
           <Text style={styles.descriptionText}>
-            Lorem ipsum dolor sit amet, consetdur Maton adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.
+            {foodItem.description || 'Không có mô tả cho món ăn này.'}
           </Text>
         </View>
       </ScrollView>
@@ -268,7 +191,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pageTitle: {
-    fontFamily: 'System',
     fontSize: 17,
     color: '#181C2E',
   },
@@ -287,95 +209,42 @@ const styles = StyleSheet.create({
     height: 210,
     marginHorizontal: 24,
     borderRadius: 20,
-    backgroundColor: '#98A8B8', // Placeholder color
-    position: 'relative',
+    backgroundColor: '#98A8B8',
+    overflow: 'hidden',
   },
   foodImage: {
     flex: 1,
     borderRadius: 20,
-  },
-  badgeRow: {
-    position: 'absolute',
-    bottom: 15,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    width: '100%',
-  },
-  badge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    borderRadius: 61,
-  },
-  badgeText: {
-    color: '#32343E',
-    fontSize: 14,
-  },
-  pagination: {
-    position: 'absolute',
-    bottom: 30,
-    flexDirection: 'row',
-    alignSelf: 'center',
-  },
-  paginationDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    marginHorizontal: 3,
-  },
-  activeDot: {
-    backgroundColor: '#FFFFFF',
-    width: 21,
-    borderRadius: 22,
   },
   detailsContainer: {
     paddingHorizontal: 24,
     paddingVertical: 15,
   },
   foodName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: '#32343E',
+    marginBottom: 8,
   },
   foodPrice: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#32343E',
-    position: 'absolute',
-    right: 24,
-    top: 15,
+    color: '#FB6D3A',
+    marginBottom: 12,
   },
-  detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 20,
+  categoryContainer: {
+    marginVertical: 10,
   },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  categoryBadge: {
+    backgroundColor: 'rgba(255, 118, 33, 0.2)',
+    borderRadius: 30,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
   },
-  locationText: {
-    marginLeft: 5,
-    color: '#AFAFAF',
+  categoryText: {
     fontSize: 13,
-  },
-  ratingsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    marginLeft: 5,
-    color: COLORS.primary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  reviewText: {
-    marginLeft: 5,
-    color: '#AFAFAF',
-    fontSize: 14,
+    color: '#FB6D3A',
   },
   separator: {
     height: 1,
@@ -383,48 +252,15 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '600',
     color: '#32343E',
-    marginBottom: 15,
-  },
-  ingredientsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -7,
-  },
-  ingredientItem: {
-    width: '20%',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 5,
-  },
-  ingredientCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFEBE4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 5,
-  },
-  iconWrapper: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ingredientName: {
-    color: '#737782',
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  allergyText: {
-    fontSize: 8,
+    marginBottom: 10,
   },
   descriptionText: {
     color: '#737782',
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 22,
   },
   tabBar: {
     flexDirection: 'row',

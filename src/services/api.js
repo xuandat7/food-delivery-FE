@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // Base URL cho API calls - sử dụng biến môi trường hoặc fallback URL
-const BASE_URL = process.env.API_URL || 'http://172.20.10.13:3001';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
+const BASE_URL = process.env.API_URL || 'http://172.20.10.2:3001';  // 10.0.2.2 dùng cho Android Emulator để trỏ đến localhost của máy chủ
 
 // Log API URL
 console.log('Using API URL:', BASE_URL);
@@ -777,7 +777,7 @@ export const restaurantAPI = {
   },
   
   /**
-   * Add new dish
+   * Add new dish (alias for backward compatibility)
    * @param {Object} dishData - Dish data including name, price, description, etc.
    * @returns {Promise} - API response
    */
@@ -793,6 +793,26 @@ export const restaurantAPI = {
         };
       }
       
+      // Lấy restaurant ID từ profile
+      let restaurantId = null;
+      try {
+        const profileResponse = await fetch(`${BASE_URL}/restaurants/profile`, {
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+        });
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          restaurantId = profileData.id;
+          console.log('Đã lấy restaurant ID:', restaurantId);
+        }
+      } catch (profileError) {
+        console.error('Không thể lấy restaurant ID:', profileError);
+      }
+      
       // Use FormData for file upload
       const formData = new FormData();
       
@@ -802,14 +822,24 @@ export const restaurantAPI = {
       if (dishData.description) formData.append('description', dishData.description);
       if (dishData.category) formData.append('category', dishData.category);
       
-      // Add image if present
+      // Thêm restaurant ID vào request
+      if (restaurantId) {
+        formData.append('restaurantId', restaurantId.toString());
+      }
+      
+      // Add image if present (cải thiện cách xử lý ảnh)
       if (dishData.image && dishData.image.uri) {
-        const uriParts = dishData.image.uri.split('.');
-        const fileType = uriParts[uriParts.length - 1];
+        let uriParts = dishData.image.uri.split('.');
+        let fileType = uriParts[uriParts.length - 1];
+        
+        // Nếu URL không chứa extension, sử dụng jpg làm mặc định
+        if (fileType.length > 10 || !fileType.match(/^(jpg|jpeg|png|gif)$/i)) {
+          fileType = 'jpg';
+        }
         
         formData.append('thumbnail', {
           uri: dishData.image.uri,
-          name: `dish.${fileType}`,
+          name: `dish_image.${fileType}`,
           type: `image/${fileType}`,
         });
       }
@@ -836,6 +866,70 @@ export const restaurantAPI = {
       return { success: true, message: 'Thêm món ăn thành công', data: data };
     } catch (error) {
       console.error('Add dish error:', error);
+      return handleError(error);
+    }
+  },
+  
+  /**
+   * Create new dish (for EditFoodScreen)
+   * @param {Object} dishData - Object containing dish information 
+   * @returns {Promise} - API response
+   */
+  createDish: async (dishData) => {
+    try {
+      console.log('Creating new dish');
+      
+      // Chuẩn bị dữ liệu để gửi lên server
+      const jsonData = {
+        name: dishData.name || '',
+        price: parseFloat(dishData.price) || 0,
+        description: dishData.description || '',
+        category: dishData.category || 'Uncategorized',
+        restaurantId: 1 // Hard code restaurantId = 1
+      };
+      
+      console.log('Creating dish with JSON data:', jsonData);
+      
+      // Gửi request dạng JSON thay vì FormData để đơn giản hóa
+      const response = await fetch(`${BASE_URL}/dishes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+      });
+      
+      console.log('Create dish response status:', response.status);
+      
+      // Kiểm tra nếu server trả về lỗi
+      if (!response.ok) {
+        let errorMessage = 'Không thể tạo món ăn';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // Nếu không parse được response JSON
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Parse response data
+      try {
+        const data = await response.json();
+        return { success: true, message: 'Tạo món ăn thành công', data };
+      } catch (e) {
+        // Nếu không có JSON response hoặc parse lỗi, trả về thành công với dữ liệu cơ bản
+        return { 
+          success: true, 
+          message: 'Tạo món ăn thành công',
+          data: {
+            id: Math.floor(Math.random() * 1000) + 1, // Random ID just for UI
+            ...jsonData
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Create dish error:', error);
       return handleError(error);
     }
   },
@@ -882,6 +976,119 @@ export const restaurantAPI = {
         message: 'Using mock restaurant data',
         data: mockRestaurant
       };
+    }
+  },
+
+  /**
+   * Update an existing dish
+   * @param {number} dishId - ID of the dish to update
+   * @param {Object} dishData - Updated dish data
+   * @returns {Promise} - API response
+   */
+  updateDish: async (dishId, dishData) => {
+    try {
+      console.log(`Updating dish with ID: ${dishId}`);
+      
+      // Chuẩn bị dữ liệu để gửi lên server
+      const jsonData = {
+        name: dishData.name || '',
+        price: parseFloat(dishData.price) || 0,
+        description: dishData.description || '',
+        category: dishData.category || 'Uncategorized',
+        restaurantId: 1 // Hard code restaurantId = 1
+      };
+      
+      console.log('Updating dish with JSON data:', jsonData);
+      
+      // Gửi request dạng JSON thay vì FormData để đơn giản hóa
+      const response = await fetch(`${BASE_URL}/dishes/${dishId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+      });
+      
+      console.log('Update dish response status:', response.status);
+      
+      // Kiểm tra nếu server trả về lỗi
+      if (!response.ok) {
+        let errorMessage = 'Không thể cập nhật món ăn';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // Nếu không parse được response JSON
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Nếu không có JSON response (HTTP 204 No Content)
+      if (response.status === 204) {
+        return { 
+          success: true, 
+          message: 'Cập nhật món ăn thành công',
+          data: {
+            id: dishId,
+            ...jsonData
+          }
+        };
+      }
+      
+      // Parse response data nếu có
+      try {
+        const data = await response.json();
+        return { success: true, message: 'Cập nhật món ăn thành công', data };
+      } catch (e) {
+        // Nếu không có JSON response hoặc parse lỗi, trả về thành công với dữ liệu cơ bản
+        return { 
+          success: true, 
+          message: 'Cập nhật món ăn thành công',
+          data: {
+            id: dishId,
+            ...jsonData
+          }
+        };
+      }
+    } catch (error) {
+      console.error('Update dish error:', error);
+      return handleError(error);
+    }
+  },
+  
+  /**
+   * Delete a dish
+   * @param {number} dishId - ID of the dish to delete
+   * @returns {Promise} - API response
+   */
+  deleteDish: async (dishId) => {
+    try {
+      console.log(`Deleting dish with ID: ${dishId}`);
+      
+      // Không cần token do đã bỏ yêu cầu xác thực ở backend
+      const response = await fetch(`${BASE_URL}/dishes/${dishId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      console.log('Delete dish response status:', response.status);
+      
+      if (!response.ok) {
+        // Try to parse error response
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Không thể xóa món ăn');
+        } catch (parseError) {
+          throw new Error('Không thể xóa món ăn');
+        }
+      }
+      
+      return { success: true, message: 'Xóa món ăn thành công', data: null };
+    } catch (error) {
+      console.error('Delete dish error:', error);
+      return handleError(error);
     }
   }
 };

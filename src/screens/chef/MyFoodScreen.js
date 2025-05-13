@@ -7,39 +7,49 @@ import {
   FlatList,
   Image,
   StyleSheet,
-  StatusBar
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Modal
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import api from '../../services/api'; // Import API service
 
-const FoodItem = ({ item, onPress }) => {
+const FoodItem = ({ item, onPress, onEditPress }) => {
   return (
     <TouchableOpacity style={styles.foodItem} onPress={() => onPress(item)}>
-      <View style={styles.foodImage} />
+      {item.thumbnail ? (
+        <Image 
+          source={{ uri: item.thumbnail }}
+          style={styles.foodImage}
+          defaultSource={require('../../../assets/icon.png')}
+        />
+      ) : (
+        <View style={styles.foodImage} />
+      )}
       <View style={styles.foodInfo}>
         <View style={styles.foodHeader}>
           <Text style={styles.foodName}>{item.name}</Text>
-          <TouchableOpacity style={styles.moreIcon}>
+          <TouchableOpacity 
+            style={styles.moreIcon} 
+            onPress={() => onEditPress(item)}
+          >
             <Feather name="more-vertical" size={20} color="#333" />
           </TouchableOpacity>
         </View>
         
         <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{item.category}</Text>
+          <Text style={styles.categoryText}>{item.category || 'Không phân loại'}</Text>
         </View>
         
         <View style={styles.priceRow}>
-          <Text style={styles.price}>${item.price}</Text>
-        </View>
-        
-        <View style={styles.reviewRow}>
-          <FontAwesome name="star" size={14} color="#FB6D3A" />
-          <Text style={styles.rating}>{item.rating}</Text>
-          <Text style={styles.reviewCount}>({item.reviews} Review)</Text>
-          <Text style={styles.pickupText}>Pick UP</Text>
+          <Text style={styles.price}>{item.price ? new Intl.NumberFormat('vi-VN').format(item.price) + 'đ' : 'Chưa có giá'}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -50,35 +60,70 @@ const MyFoodScreen = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [dishes, setDishes] = useState([]);
+  const [filteredDishes, setFilteredDishes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDish, setSelectedDish] = useState(null);
   
-  const categories = ['All', 'Breakfast', 'Lunch', 'Dinner'];
+  // Get unique categories from dishes
+  const getCategories = () => {
+    const uniqueCategories = new Set(dishes.map(dish => dish.category));
+    return ['All', ...Array.from(uniqueCategories).filter(Boolean)];
+  };
   
-  const foodItems = [
-    {
-      id: '1',
-      name: 'Chicken Thai Biriyani',
-      category: 'Breakfast',
-      price: '60',
-      rating: '4.9',
-      reviews: '10'
-    },
-    {
-      id: '2',
-      name: 'Chicken Bhuna',
-      category: 'Breakfast',
-      price: '30',
-      rating: '4.9',
-      reviews: '10'
-    },
-    {
-      id: '3',
-      name: 'Mazalichiken Halim',
-      category: 'Breakfast',
-      price: '25',
-      rating: '4.9',
-      reviews: '10'
+  // Load dishes from API
+  const loadDishes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.restaurant.getDishes(0, 100);
+      console.log("API Response:", response);
+      
+      if (response.success) {
+        setDishes(response.data);
+        setFilteredDishes(response.data);
+      } else {
+        setError(response.message || 'Không thể tải danh sách món ăn');
+      }
+    } catch (error) {
+      console.error('Error loading dishes:', error);
+      setError('Đã xảy ra lỗi khi tải danh sách món ăn');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  ];
+  };
+  
+  // Filter dishes by category
+  const filterDishes = (category) => {
+    if (category === 'All') {
+      setFilteredDishes(dishes);
+    } else {
+      setFilteredDishes(dishes.filter(dish => dish.category === category));
+    }
+  };
+  
+  // Handle refresh
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadDishes();
+  };
+  
+  // Load dishes on initial render and when coming back to screen
+  useEffect(() => {
+    if (isFocused) {
+      loadDishes();
+    }
+  }, [isFocused]);
+  
+  // Filter dishes when category changes
+  useEffect(() => {
+    filterDishes(selectedCategory);
+  }, [selectedCategory, dishes]);
   
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -90,6 +135,85 @@ const MyFoodScreen = () => {
 
   const handleFoodItemPress = (foodItem) => {
     navigation.navigate('ChefFoodDetails', { foodItem });
+  };
+
+  const handleEditPress = (foodItem) => {
+    // Set the selected dish and show modal
+    setSelectedDish(foodItem);
+    setModalVisible(true);
+  };
+  
+  const handleEditDish = () => {
+    setModalVisible(false);
+    
+    // Log chi tiết để debug
+    console.log('Editing dish:', selectedDish?.id, selectedDish?.name);
+    
+    if (selectedDish) {
+      // Đảm bảo đường dẫn screen name chính xác
+      setTimeout(() => {
+        // Sử dụng cách điều hướng khác
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'EditFoodScreen',
+              params: { foodItem: selectedDish }
+            }
+          ]
+        });
+      }, 300);
+    } else {
+      console.error('No dish selected for editing');
+      Alert.alert('Lỗi', 'Không thể sửa món ăn, vui lòng thử lại');
+    }
+  };
+  
+  const handleDeleteDish = () => {
+    setModalVisible(false);
+    
+    // Show confirmation dialog
+    Alert.alert(
+      'Xác nhận xóa',
+      `Bạn có chắc chắn muốn xóa món "${selectedDish?.name}" không?`,
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel'
+        },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: confirmDeleteDish
+        }
+      ]
+    );
+  };
+  
+  const confirmDeleteDish = async () => {
+    if (!selectedDish || !selectedDish.id) return;
+    
+    try {
+      setLoading(true);
+      
+      // Call API to delete dish
+      const response = await api.restaurant.deleteDish(selectedDish.id);
+      
+      if (response.success) {
+        // Remove dish from state
+        const updatedDishes = dishes.filter(dish => dish.id !== selectedDish.id);
+        setDishes(updatedDishes);
+        Alert.alert('Thành công', 'Đã xóa món ăn thành công');
+      } else {
+        // Handle error
+        Alert.alert('Lỗi', response.message || 'Không thể xóa món ăn');
+      }
+    } catch (error) {
+      console.error('Error deleting dish:', error);
+      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi xóa món ăn');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,41 +228,122 @@ const MyFoodScreen = () => {
         >
           <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>My Food List</Text>
+        <Text style={styles.pageTitle}>Danh sách món ăn</Text>
       </View>
       
       {/* Category Tabs */}
       <View style={styles.categoryContainer}>
-        {categories.map((category) => (
-          <TouchableOpacity 
-            key={category}
-            onPress={() => handleCategorySelect(category)}
-            style={styles.categoryTab}
-          >
-            <Text 
-              style={[
-                styles.categoryTitle,
-                selectedCategory === category && styles.selectedCategoryTitle
-              ]}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.categoryScrollContent}
+        >
+          {getCategories().map((category) => (
+            <TouchableOpacity 
+              key={category}
+              onPress={() => handleCategorySelect(category)}
+              style={styles.categoryTab}
             >
-              {category}
-            </Text>
-            {selectedCategory === category && <View style={styles.activeIndicator} />}
-          </TouchableOpacity>
-        ))}
+              <Text 
+                style={[
+                  styles.categoryTitle,
+                  selectedCategory === category && styles.selectedCategoryTitle
+                ]}
+              >
+                {category}
+              </Text>
+              {selectedCategory === category && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
       
       {/* Item Count */}
-      <Text style={styles.itemCount}>Total 03 items</Text>
+      <Text style={styles.itemCount}>Tổng số: {filteredDishes.length} món ăn</Text>
       
-      {/* Food List */}
-      <FlatList
-        data={foodItems}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <FoodItem item={item} onPress={handleFoodItemPress} />}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3498db" />
+          <Text style={styles.loadingText}>Đang tải danh sách món ăn...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadDishes}>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredDishes}
+          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+          renderItem={({ item }) => (
+            <FoodItem 
+              item={item} 
+              onPress={handleFoodItemPress} 
+              onEditPress={handleEditPress}
+            />
+          )}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#3498db"]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Không có món ăn nào trong danh mục này</Text>
+            </View>
+          }
+        />
+      )}
+      
+      {/* Options Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={handleEditDish}
+              >
+                <Feather name="edit-2" size={18} color="#333" />
+                <Text style={styles.modalOptionText}>Sửa sản phẩm</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.modalDivider} />
+              
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={handleDeleteDish}
+              >
+                <Feather name="trash-2" size={18} color="#FF3B30" />
+                <Text style={[styles.modalOptionText, styles.deleteText]}>Xóa sản phẩm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      
+      {/* Floating Action Button to add new items */}
+      <TouchableOpacity
+        style={styles.fabButton}
+        onPress={() => navigation.navigate('AddNewItems')}
+      >
+        <Ionicons name="add" size={24} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -148,11 +353,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginTop: 50,
+    marginTop: 10,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   backButton: {
     width: 45,
@@ -163,22 +414,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pageTitle: {
-    fontSize: 17,
+    fontSize: 18,
     color: '#181C2E',
     marginLeft: 16,
-    fontWeight: '400',
+    fontWeight: '500',
   },
   categoryContainer: {
-    flexDirection: 'row',
-    marginTop: 32,
-    paddingHorizontal: 24,
+    marginTop: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F6F8FA',
     position: 'relative',
   },
+  categoryScrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 6,
+  },
   categoryTab: {
     marginRight: 40,
-    paddingBottom: 10,
+    paddingBottom: 6,
     position: 'relative',
   },
   categoryTitle: {
@@ -187,7 +440,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   selectedCategoryTitle: {
-    color: '#FB6D3A',
+    color: '#3498db',
     fontWeight: '700',
   },
   activeIndicator: {
@@ -196,25 +449,25 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     width: 47,
     marginLeft: -10,
   },
   itemCount: {
     fontSize: 14,
     color: '#9B9BA5',
-    marginTop: 24,
+    marginTop: 12,
     marginLeft: 24,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   listContainer: {
-    paddingVertical: 16,
+    paddingVertical: 8,
     paddingHorizontal: 24,
     paddingBottom: 120, // Extra space for bottom tab
   },
   foodItem: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 16,
     height: 102,
   },
   foodImage: {
@@ -243,45 +496,71 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   categoryBadge: {
-    backgroundColor: 'rgba(255, 118, 33, 0.2)',
+    backgroundColor: 'rgba(52, 152, 219, 0.2)',
     borderRadius: 30,
     paddingHorizontal: 12,
     paddingVertical: 2,
     alignSelf: 'flex-start',
   },
   categoryText: {
-    color: '#FF7621',
-    fontSize: 13.7,
+    fontSize: 11,
+    color: '#3498db',
   },
   priceRow: {
-    alignItems: 'flex-end',
-    alignSelf: 'flex-end',
+    marginTop: 4,
   },
   price: {
-    fontSize: 17.5,
+    fontSize: 16,
     fontWeight: '700',
     color: '#32343E',
   },
-  reviewRow: {
-    flexDirection: 'row',
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  rating: {
-    fontSize: 13.7,
-    fontWeight: '700',
-    color: '#FB6D3A',
-    marginLeft: 4,
-    marginRight: 10,
+  modalContainer: {
+    width: '80%',
   },
-  reviewCount: {
-    fontSize: 13.7,
-    color: '#AFAFAF',
-    flex: 1,
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
-  pickupText: {
-    fontSize: 13.6,
-    color: '#AFAFAF',
-    textAlign: 'right',
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalOptionText: {
+    fontSize: 16,
+    marginLeft: 12,
+    color: '#333',
+  },
+  deleteText: {
+    color: '#FF3B30',
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#3498db',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
   },
 });
 

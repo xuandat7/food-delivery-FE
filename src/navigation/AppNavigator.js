@@ -6,6 +6,7 @@ import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity } from 'rea
 import { AsyncStorage } from '../services/api';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
 
 // Import screens
 import SplashScreen from '../screens/onboarding/SplashScreen';
@@ -37,6 +38,7 @@ import CategoryDetailScreen from '../screens/home/CategoryDetailScreen';
 import SellerDashboard from '../screens/chef/SellerDashboard';
 import MyFoodScreen from '../screens/chef/MyFoodScreen';
 import AddNewItemsScreen from '../screens/chef/AddNewItemsScreen';
+import EditFoodScreen from '../screens/chef/EditFoodScreen';
 import NotificationScreen from '../screens/chef/NotificationScreen';
 import ChefProfileScreen from '../screens/chef/ProfileScreen';
 
@@ -161,6 +163,15 @@ const AppNavigator = () => {
         
         {/* Restaurant screens */}
         <Stack.Screen name="RestaurantTabs" component={RestaurantTabNavigator} />
+        <Stack.Screen name="AddNewItems" component={AddNewItemsScreen} options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="EditFoodScreen" 
+          component={EditFoodScreen}
+          options={{
+            headerShown: false,
+            presentation: 'card'
+          }}
+        />
         <Stack.Screen name="EditCart" component={EditCart} />
         <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
@@ -189,7 +200,7 @@ const RestaurantTabNavigator = () => {
           elevation: 10,
           position: 'absolute',
         },
-        tabBarActiveTintColor: '#FB6D3A',
+        tabBarActiveTintColor: '#3498db',
         tabBarInactiveTintColor: '#616167',
         tabBarShowLabel: true,
         tabBarLabelStyle: {
@@ -221,26 +232,33 @@ const RestaurantTabNavigator = () => {
       />
       
       <Tab.Screen 
-        name="AddNewItems" 
-        component={AddNewItemsScreen}
+        name="AddTab" 
+        component={EmptyScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <View style={{
-              width: 48,
-              height: 48,
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: '#FFF1F1',
-              borderWidth: 1.5,
-              borderColor: '#FF7621',
-              borderRadius: 24, 
-              marginBottom: 5,
-              position: 'relative',
-              top: -15,
-            }}>
-              <Ionicons name="add" size={26} color="#FF7621" />
-            </View>
-          ),
+          tabBarIcon: ({ color }) => {
+            const navigation = useNavigation();
+            return (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('AddNewItems')}
+              >
+                <View style={{
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: '#E6F7FF',
+                  borderWidth: 1.5,
+                  borderColor: '#3498db',
+                  borderRadius: 24, 
+                  marginBottom: 5,
+                  position: 'relative',
+                  top: -15,
+                }}>
+                  <Ionicons name="add" size={26} color="#3498db" />
+                </View>
+              </TouchableOpacity>
+            );
+          },
           tabBarLabel: ({ color }) => (
             <Text style={{ 
               color: color, 
@@ -276,6 +294,23 @@ const RestaurantTabNavigator = () => {
       />
     </Tab.Navigator>
   );
+};
+
+// Empty screen for the Add tab (will be replaced with navigation)
+const EmptyScreen = () => {
+  const navigation = useNavigation();
+  
+  React.useEffect(() => {
+    const openAddScreen = () => {
+      navigation.navigate('AddNewItems');
+    };
+    
+    // We use a timeout to avoid navigation during render
+    const timer = setTimeout(openAddScreen, 0);
+    return () => clearTimeout(timer);
+  }, [navigation]);
+  
+  return <View />;
 };
 
 const styles = StyleSheet.create({

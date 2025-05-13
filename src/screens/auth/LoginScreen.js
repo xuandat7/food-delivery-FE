@@ -101,7 +101,7 @@ const LoginScreen = () => {
             console.log('Navigating to restaurant dashboard...');
             navigation.reset({
               index: 0,
-              routes: [{ name: 'SellerDashboard' }],
+              routes: [{ name: 'RestaurantTabs' }],
             });
           } else {
             console.log('Navigating to customer home...');

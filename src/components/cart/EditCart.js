@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Nếu bạn dùng Expo, hoặc dùng react-native-vector-icons
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import api from '../../services/api';
+import { cartAPI } from '../../services';
 
 const EditCart = () => {
   // State for cart items
@@ -21,7 +21,7 @@ const EditCart = () => {
   useEffect(() => {
     const fetchCart = async () => {
       setLoading(true);
-      const res = await api.getCart();
+      const res = await cartAPI.getCart();
       console.log('Cart data:', res);
       if (res.success) {
         setCartId(res.data.cartId);
@@ -49,7 +49,7 @@ const EditCart = () => {
         // Refetch cart from backend to ensure UI is in sync after clearCart
         const fetchCart = async () => {
           setLoading(true);
-          const res = await api.getCart();
+          const res = await cartAPI.getCart();
           if (res.success) {
             setCartId(res.data.cartId);
             setCartItems((res.data.items || []).map(item => ({
@@ -97,7 +97,7 @@ const EditCart = () => {
   const handleDoneEdit = async () => {
     for (const item of cartItems) {
       try {
-        await api.updateCartItemQuantity(item.id, item.qty);
+        await cartAPI.updateCartItemQuantity(item.id, item.qty);
       } catch (e) {
         // Có thể show thông báo lỗi nếu muốn
       }
@@ -108,7 +108,7 @@ const EditCart = () => {
   // Xoá sản phẩm khỏi giỏ hàng
   const handleRemoveItem = async (id) => {
     try {
-      const res = await api.removeCartItem(id);
+      const res = await cartAPI.removeCartItem(id);
       if (res.success) {
         setCartItems(items => items.filter(item => item.id !== id));
       }

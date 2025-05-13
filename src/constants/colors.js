@@ -1,18 +1,18 @@
 // Common colors for the app
 
 const COLORS = {
-  primary: '#3498db',
+  primary: '#FF9800',
   secondary: '#333333',
   background: '#FFFFFF',
-  loginBackground: '#3498db',
+  loginBackground: '#FF9800',
   text: '#333333',
   textSecondary: '#757575',
   inputBackground: '#F8F8F8',
   inputBorder: '#E0E0E0',
   placeholderText: '#9E9E9E',
   loginDarkElements: 'rgba(255, 255, 255, 0.3)',
-  primaryButton: '#3498db',
-  dotActive: '#3498db',
+  primaryButton: '#FF9800',
+  dotActive: '#FF9800',
   dotInactive: '#E0E0E0',
   checkboxBorder: '#E0E0E0',
   rememberMeText: '#757575',

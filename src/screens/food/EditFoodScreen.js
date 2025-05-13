@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { api } from '../../services/api';
+import { dishAPI } from '../../services';
 
 const EditFoodScreen = ({ route, navigation }) => {
   const { foodItem } = route.params || {};
@@ -63,14 +63,16 @@ const EditFoodScreen = ({ route, navigation }) => {
       }
       
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'image',
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.7,
       });
       
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setImage(result.assets[0].uri);
+        const selectedImage = result.assets[0].uri;
+        console.log('Đã chọn ảnh:', selectedImage);
+        setImage(selectedImage);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -104,47 +106,40 @@ const EditFoodScreen = ({ route, navigation }) => {
         price: parseFloat(price),
         description: description || '',
         category,
-        restaurantId: 1,
       };
       
-      // Nếu có hình ảnh mới, thêm vào dishData
-      if (image && (!foodItem || image !== foodItem.thumbnail)) {
-        dishData.thumbnail = image;
+      // Xử lý hình ảnh
+      if (image) {
+        // Nếu image là URI string (đường dẫn ảnh mới được chọn)
+        if (image !== foodItem?.thumbnail) {
+          // Đây là ảnh mới được chọn, không phải URL từ server
+          if (image.startsWith('file://') || image.startsWith('content://')) {
+            dishData.thumbnail = {
+              uri: image,
+              name: image.split('/').pop(),
+              type: 'image/jpeg'
+            };
+          } else {
+            // Trường hợp image là URL từ server
+            dishData.thumbnail = image;
+          }
+        } else {
+          // Giữ nguyên thumbnail cũ
+          dishData.thumbnail = image;
+        }
       }
       
       console.log('Gửi dữ liệu:', dishData);
       
       let response;
       
-      // Xử lý chỉnh sửa món ăn
       if (isEditing && foodItem) {
-        try {
-          // Gọi API cập nhật trực tiếp thay vì tạo mới và xóa cũ
-          response = await api.restaurant.updateDish(foodItem.id, dishData);
-          console.log('Kết quả cập nhật:', response);
-        } catch (updateError) {
-          console.error('Lỗi khi cập nhật:', updateError);
-          
-          // Nếu cập nhật thất bại, thử phương án tạo mới và xóa cũ
-          console.log('Chuyển sang phương án dự phòng: tạo mới và xóa cũ');
-          response = await api.restaurant.createDish(dishData);
-          
-          if (response.success) {
-            console.log('Tạo món ăn mới thành công:', response.data);
-            
-            // Nếu tạo thành công, xóa món cũ
-            try {
-              const deleteResponse = await api.restaurant.deleteDish(foodItem.id);
-              console.log('Kết quả xóa món cũ:', deleteResponse);
-            } catch (deleteError) {
-              console.error('Lỗi khi xóa món cũ:', deleteError);
-              // Không báo lỗi cho người dùng vì món mới đã được tạo thành công
-            }
-          }
-        }
+        // Gọi API cập nhật món ăn
+        response = await dishAPI.updateDish(foodItem.id, dishData);
+        console.log('Kết quả cập nhật:', response);
       } else {
         // Gọi API tạo món ăn mới
-        response = await api.restaurant.createDish(dishData);
+        response = await dishAPI.addDish(dishData);
       }
       
       if (response.success) {
@@ -154,7 +149,15 @@ const EditFoodScreen = ({ route, navigation }) => {
           [
             { 
               text: 'OK', 
-              onPress: () => navigateBack()
+              onPress: () => {
+                try {
+                  // Đơn giản chỉ quay lại màn hình trước đó
+                  navigation.goBack();
+                } catch (error) {
+                  console.error('Navigation error:', error);
+                  // Nếu có lỗi, không làm gì cả để giữ người dùng ở màn hình hiện tại
+                }
+              }
             }
           ]
         );
@@ -196,36 +199,26 @@ const EditFoodScreen = ({ route, navigation }) => {
           {
             text: 'Thoát',
             style: 'destructive',
-            onPress: () => navigateBack()
+            onPress: () => {
+              try {
+                navigation.goBack();
+              } catch (error) {
+                console.error('Navigation error:', error);
+              }
+            }
           }
         ]
       );
     } else {
       // Nếu không có thay đổi, thoát trực tiếp
-      navigateBack();
+      try {
+        navigation.goBack();
+      } catch (error) {
+        console.error('Navigation error:', error);
+      }
     }
   };
   
-  // Hàm điều hướng quay lại an toàn
-  const navigateBack = () => {
-    try {
-      // Thử goBack trước
-      if (navigation.canGoBack()) {
-        navigation.goBack();
-      } else {
-        // Nếu không thể goBack, chuyển đến màn hình chính
-        navigation.navigate('RestaurantTabs');
-      }
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Fallback nếu cả hai cách trên đều không hoạt động
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'RestaurantTabs' }],
-      });
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView 
@@ -383,7 +376,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginTop: 50,
+    marginTop: 10,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',

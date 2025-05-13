@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import api from '../../services/api';
+import { restaurantAPI } from '../../services';
 
 const TypeRestaurantsScreen = () => {
   const route = useRoute();
@@ -27,7 +27,7 @@ const TypeRestaurantsScreen = () => {
       setLoading(true);
       // Use the dedicated API endpoint for filtering by type
       console.log(`Fetching restaurants of type "${type}" - page ${page}`);
-      const response = await api.restaurant.getRestaurantsByType(type, page, 10);
+      const response = await restaurantAPI.getRestaurantsByType(type, page, 10);
       
       if (response.success) {
         console.log(`Fetched ${response.data.content.length} restaurants of type "${type}"`);

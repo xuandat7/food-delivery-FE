@@ -15,7 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import api from '../../services/api';
+import { authAPI } from '../../services';
 
 const { height, width } = Dimensions.get('window');
 
@@ -133,7 +133,7 @@ const SignUpScreen = () => {
         console.log('Attempting registration with:', userData);
         
         // Call the registration API
-        const response = await api.auth.register(userData, isRestaurant);
+        const response = await authAPI.register(userData, isRestaurant);
         
         console.log('Registration response:', response);
         

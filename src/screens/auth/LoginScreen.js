@@ -15,8 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import api from '../../services/api';
-import { AsyncStorage } from '../../services/api';
+import { authAPI, AsyncStorage } from '../../services';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -70,7 +69,7 @@ const LoginScreen = () => {
         console.log('Attempting login with:', { email, password, isRestaurant });
         
         // Call login API
-        const response = await api.auth.login(email, password, isRestaurant);
+        const response = await authAPI.login(email, password, isRestaurant);
         
         console.log('Login response:', response);
         

@@ -1,19 +1,16 @@
-import React from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, StatusBar, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { AllType } from "../../components/home/AllType";
 import { Search } from "../../components/home/Search";
-import { Top } from "../../components/home/Top";
-import { AllCategories } from "../../components/home/AllCategories";
-import { HeyHalalGood } from "../../components/home/HeyHalalGood";
 import { Restaurant } from "../../components/home/Restaurant";
+import { userAPI, cartAPI, AsyncStorage } from '../../services';
+import { Top } from "../../components/home/Top";
+import { HeyHalalGood } from "../../components/home/HeyHalalGood";
 import { RestaurantWrapper } from "../../components/home/RestaurantWrapper";
-import { FontAwesome, Ionicons, Entypo } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useState, useEffect } from 'react';
-import { StyleSheet, ActivityIndicator } from "react-native"; // Thêm ActivityIndicator vào import
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from "../../services/api";
+import { FontAwesome, Entypo } from '@expo/vector-icons';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -65,7 +62,7 @@ const HomeScreen = () => {
   useEffect(() => {
     const fetchCartCount = async () => {
       try {
-        const res = await api.getCart();
+        const res = await cartAPI.getCart();
         if (res.success && res.data && Array.isArray(res.data.items)) {
           setCartCount(res.data.totalItems || 0);
         } else {
@@ -83,7 +80,7 @@ const HomeScreen = () => {
     React.useCallback(() => {
       const fetchCartCount = async () => {
         try {
-          const res = await api.getCart();
+          const res = await cartAPI.getCart();
           if (res.success && res.data && Array.isArray(res.data.items)) {
             setCartCount(res.data.totalItems || 0);
           } else {
@@ -119,7 +116,7 @@ const HomeScreen = () => {
       }
       
       // Nếu không có thông tin trong AsyncStorage, gọi API để lấy
-      const response = await api.user.getProfile();
+      const response = await userAPI.getProfile();
       console.log('User profile response:', response);
       
       if (response.success && response.data) {
@@ -163,13 +160,6 @@ const HomeScreen = () => {
             <TouchableOpacity onPress={() => navigation.navigate('Menu')}>
               <Ionicons name="menu-outline" size={24} color="#000" />
             </TouchableOpacity>
-            <View className="ml-3">
-              <Text className="text-[#FF6B00] font-medium text-sm">DELIVER TO</Text>
-              <View className="flex-row items-center">
-                <Text className="text-gray-700 font-medium">Halal Lab office</Text>
-                <Entypo name="chevron-down" size={16} color="black" style={{ marginLeft: 4 }} />
-              </View>
-            </View>
           </View>
           <TouchableOpacity className="relative" onPress={() => navigation.navigate('EditCart')}>
             <View className="bg-[#0D182E] rounded-full w-11 h-11 items-center justify-center">
@@ -191,7 +181,7 @@ const HomeScreen = () => {
 
           {/* Categories Section */}
           <View className="mt-0">
-            <AllCategories />
+            <AllType />
           </View>
           
           {/* Open Restaurants Section */}

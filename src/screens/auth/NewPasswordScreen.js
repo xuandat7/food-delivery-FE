@@ -15,7 +15,7 @@ import {
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import api from '../../services/api';
+import { authAPI } from '../../services';
 
 const { height, width } = Dimensions.get('window');
 
@@ -106,7 +106,7 @@ const NewPasswordScreen = () => {
       console.log('Using OTP:', otp);
       
       // Call the reset password API with email, otp, and newPassword
-      const response = await api.auth.resetPassword(email, otp, password);
+      const response = await authAPI.resetPassword(email, otp, password);
       
       console.log('Reset password response:', response);
       

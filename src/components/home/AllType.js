@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-nati
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 
-export const AllCategories = () => {
+export const AllType = () => {
   const navigation = useNavigation();
   
   // Define the 5 restaurant types

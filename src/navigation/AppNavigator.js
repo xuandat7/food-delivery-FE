@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { AsyncStorage } from '../services/api';
+import { AsyncStorage } from '../services';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -20,27 +20,26 @@ import HomeScreen from '../screens/home/HomeScreen';
 import PersonalInfoScreen from '../screens/info/PersonalInfoScreen';
 import EditProfileScreen from '../screens/info/EditProfileScreen';
 import MenuScreen from '../screens/home/MenuScreen';
-import MyOrdersScreen from '../screens/home/MyOrdersScreen';
+import MyOrdersScreen from '../screens/info/MyOrdersScreen';
 
 // Import screens from nhánh Linh
 import SearchScreen from '../screens/home/SearchScreen';
 import RestaurantViewScreen from '../screens/home/RestaurantViewScreen';
 import FilterScreen from '../screens/home/FilterScreen';
 import FoodSearchScreen from '../screens/home/FoodSearchScreen';
-import FoodDetailsScreen from '../screens/home/FoodDetailsScreen';
-import DishDetailScreen from '../screens/home/DishDetailScreen';
+import FoodDetailsScreen from '../screens/food/FoodDetailsScreen';
 
 // Import category screens
-import AllCategoriesScreen from '../screens/home/AllCategoriesScreen';
-import CategoryDetailScreen from '../screens/home/CategoryDetailScreen';
+import AllTypeRestaurantScreen from '../screens/home/AllTypeRestaurantScreen';
+// import CategoryDetailScreen from '../screens/home/CategoryDetailScreen';
 
 // Import restaurant screens
-import SellerDashboard from '../screens/chef/SellerDashboard';
-import MyFoodScreen from '../screens/chef/MyFoodScreen';
-import AddNewItemsScreen from '../screens/chef/AddNewItemsScreen';
-import EditFoodScreen from '../screens/chef/EditFoodScreen';
-import NotificationScreen from '../screens/chef/NotificationScreen';
-import ChefProfileScreen from '../screens/chef/ProfileScreen';
+import SellerDashboard from '../screens/restaurant/SellerDashboard';
+import MyFoodScreen from '../screens/restaurant/MyFoodScreen';
+import AddNewFoodScreen from '../screens/food/AddNewFoodScreen';
+import EditFoodScreen from '../screens/food/EditFoodScreen';
+import NotificationScreen from '../screens/restaurant/NotificationScreen';
+import ChefProfileScreen from '../screens/restaurant/ProfileScreen';
 
 import EditCart from '../components/cart/EditCart.js'; // Đảm bảo bạn có file EditCart.js đúng chuẩn React Native hoặc React
 import PaymentMethodScreen from '../components/payment/PaymentMethodScreen.js';
@@ -148,9 +147,8 @@ const AppNavigator = () => {
         <Stack.Screen name="TypeRestaurants" component={TypeRestaurantsScreen} />
         
         {/* Category screens */}
-        <Stack.Screen name="AllCategories" component={AllCategoriesScreen} />
-        <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
-        <Stack.Screen name="DishDetail" component={DishDetailScreen} />
+        <Stack.Screen name="AllTypeRestaurant" component={AllTypeRestaurantScreen} />
+
         
         {/* Customer screens */}
         <Stack.Screen name="Home" component={HomeScreen} />
@@ -163,7 +161,7 @@ const AppNavigator = () => {
         
         {/* Restaurant screens */}
         <Stack.Screen name="RestaurantTabs" component={RestaurantTabNavigator} />
-        <Stack.Screen name="AddNewItems" component={AddNewItemsScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="AddNewItems" component={AddNewFoodScreen} options={{ headerShown: false }} />
         <Stack.Screen 
           name="EditFoodScreen" 
           component={EditFoodScreen}

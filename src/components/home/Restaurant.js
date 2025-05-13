@@ -1,32 +1,194 @@
-import React from "react";
-import { View, Text, Image, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import api from "../../services/api";
 
 export const Restaurant = () => {
-  return (
-    <TouchableOpacity className="bg-white rounded-xl shadow-sm mb-4">
-      <Image
-        source={require("../../../assets/splash-icon.png")}
-        className="w-full h-40 rounded-t-xl"
-      />
-      <View className="p-4">
-        <View className="flex-row justify-between items-center">
-          <Text className="text-lg font-semibold text-[#31343d]">
-            Burger King
-          </Text>
-          <View className="flex-row items-center">
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text className="ml-1 text-sm text-gray-600">4.5</Text>
-          </View>
-        </View>
-        <Text className="text-sm text-gray-500 mt-1">
-          Fast Food • American • Burger
-        </Text>
-        <View className="flex-row items-center mt-2">
-          <Ionicons name="location" size={16} color="#666" />
-          <Text className="ml-1 text-sm text-gray-600">2.5 km away</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+  const navigation = useNavigation();
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchRestaurants();
+    }, [])
   );
-}; 
+
+  const fetchRestaurants = async () => {
+    try {
+      setLoading(true);
+      const response = await api.restaurant.getAllRestaurants(0, 10);
+      
+      if (response.success && response.data.content?.length > 0) {
+        console.log('Fetched restaurants:', response.data.content.length);
+        
+        const shuffledRestaurants = [...response.data.content];
+        for (let i = shuffledRestaurants.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledRestaurants[i], shuffledRestaurants[j]] = [shuffledRestaurants[j], shuffledRestaurants[i]];
+        }
+        
+        setRestaurants(shuffledRestaurants.slice(0, 5));
+      } else {
+        console.error('Failed to fetch restaurants:', response.message);
+        setRestaurants([
+          {
+            id: 1,
+            name: "Nhà hàng Hải Sản Fresh",
+            address: "123 Đường Láng, Đống Đa, Hà Nội",
+            image_url: "https://picsum.photos/700/300?random=1",
+          },
+          {
+            id: 2,
+            name: "Pizza Express",
+            address: "45 Phố Huế, Hai Bà Trưng, Hà Nội",
+            image_url: "https://picsum.photos/700/300?random=2",
+          },
+          {
+            id: 3,
+            name: "Bún Bò Huế Thanh",
+            address: "78 Phạm Ngọc Thạch, Đống Đa, Hà Nội",
+            image_url: "https://picsum.photos/700/300?random=3",
+          },
+          {
+            id: 4,
+            name: "Nhà hàng Chay Sen Tịnh",
+            address: "96 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+            image_url: "https://picsum.photos/700/300?random=4",
+          },
+          {
+            id: 5,
+            name: "Quán Cơm Gia Đình",
+            address: "15 Lê Văn Lương, Cầu Giấy, Hà Nội",
+            image_url: "https://picsum.photos/700/300?random=5",
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching restaurants:', error);
+      setRestaurants([
+        {
+          id: 1,
+          name: "Nhà hàng Hải Sản Fresh",
+          address: "123 Đường Láng, Đống Đa, Hà Nội",
+          image_url: "https://picsum.photos/700/300?random=1",
+        },
+        {
+          id: 2,
+          name: "Pizza Express",
+          address: "45 Phố Huế, Hai Bà Trưng, Hà Nội",
+          image_url: "https://picsum.photos/700/300?random=2",
+        },
+        {
+          id: 3,
+          name: "Bún Bò Huế Thanh",
+          address: "78 Phạm Ngọc Thạch, Đống Đa, Hà Nội",
+          image_url: "https://picsum.photos/700/300?random=3",
+        },
+        {
+          id: 4,
+          name: "Nhà hàng Chay Sen Tịnh",
+          address: "96 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
+          image_url: "https://picsum.photos/700/300?random=4",
+        },
+        {
+          id: 5,
+          name: "Quán Cơm Gia Đình",
+          address: "15 Lê Văn Lương, Cầu Giấy, Hà Nội",
+          image_url: "https://picsum.photos/700/300?random=5",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestaurantPress = (restaurant) => {
+    navigation.navigate('RestaurantView', { id: restaurant.id });
+  };
+
+  if (loading) {
+    return <ActivityIndicator size="small" color="#FB6D3A" style={styles.loader} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      {restaurants.map((restaurant) => (
+        <TouchableOpacity 
+          key={restaurant.id}
+          style={styles.restaurantCard}
+          onPress={() => handleRestaurantPress(restaurant)}
+        >
+          <Image 
+            source={{ uri: restaurant.image_url || 'https://via.placeholder.com/400x200' }} 
+            style={styles.restaurantImage}
+            defaultSource={require('../../../assets/icon.png')}
+          />
+          <View style={styles.overlay} />
+          <View style={styles.restaurantInfo}>
+            <Text style={styles.restaurantName}>{restaurant.name}</Text>
+            <View style={styles.locationContainer}>
+              <Ionicons name="location" size={14} color="#fff" />
+              <Text style={styles.locationText}>{restaurant.address || 'Không có địa chỉ'}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loader: {
+    marginVertical: 20,
+  },
+  restaurantCard: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    height: 160,
+  },
+  restaurantImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    backgroundColor: '#f0f0f0',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  restaurantInfo: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+  },
+  restaurantName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#fff',
+    marginLeft: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+}); 

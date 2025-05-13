@@ -198,7 +198,7 @@ export default function MenuScreen() {
 
 function MenuItem({ label, icon, onPress }) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={() => onPress && onPress(navigation)}>
+    <TouchableOpacity style={styles.menuItem} onPress={() => onPress && onPress()}>
       <View style={styles.menuIconWrapper}>
         <Ionicons name={icon || 'options-outline'} size={20} color="#ff7621" />
       </View>

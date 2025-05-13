@@ -4,9 +4,11 @@ import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native'
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import api from '../../services/api';
 
-export default function PersonalInfoScreen() {
+export default function PersonalInfoScreen(props) {
+  // Sử dụng navigation từ props nếu có, nếu không thì dùng useNavigation
   const route = useRoute();
-  const navigation = useNavigation();
+  const hookNavigation = useNavigation();
+  const navigation = props.navigation || hookNavigation;
   const isFocused = useIsFocused();
   const [userData, setUserData] = useState(route.params?.userData);
   const [loading, setLoading] = useState(!userData);
@@ -51,6 +53,16 @@ export default function PersonalInfoScreen() {
     }
   };
 
+  // Hàm điều hướng an toàn
+  const safeNavigate = (screenName, params = {}) => {
+    if (navigation) {
+      navigation.navigate(screenName, params);
+    } else {
+      console.error('Navigation is not available');
+      Alert.alert('Lỗi', 'Không thể điều hướng, vui lòng thử lại');
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -64,14 +76,15 @@ export default function PersonalInfoScreen() {
       {/* Top bar */}
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.circleBtn} onPress={() => {
-          // Điều hướng về màn hình Menu
-          navigation.navigate('Menu');
+          // Sử dụng hàm điều hướng an toàn
+          safeNavigate('Menu');
         }}>
           <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
         <Text style={styles.title}>Personal Info</Text>
         <TouchableOpacity onPress={() => {
-          navigation.navigate('EditProfile', { userData });
+          // Sử dụng hàm điều hướng an toàn
+          safeNavigate('EditProfile', { userData });
         }}>
           <Text style={styles.editText}>EDIT</Text>
         </TouchableOpacity>

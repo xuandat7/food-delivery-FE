@@ -78,8 +78,18 @@ const FoodDetailsScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleAddToCart = () => {
-    Alert.alert("Thông báo", "Đã thêm vào giỏ hàng!");
+  const handleAddToCart = async () => {
+    if (!food?.id) return;
+    try {
+      const res = await api.addToCart(food.id, quantity);
+      if (res.success) {
+        Alert.alert('Thành công', 'Đã thêm vào giỏ hàng!');
+      } else {
+        Alert.alert('Lỗi', res.message || 'Thêm vào giỏ hàng thất bại!');
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể thêm vào giỏ hàng!');
+    }
   };
   
   const goToRestaurant = () => {
@@ -467,4 +477,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FoodDetailsScreen; 
+export default FoodDetailsScreen;

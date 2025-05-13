@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Modal, ActivityIndicator, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import api from '../../services/api';
 
@@ -203,6 +203,21 @@ const RestaurantViewScreen = ({ navigation }) => {
     navigation.navigate('FoodDetails', { id: food.id });
   };
 
+  // Add this function to handle add-to-cart
+  const handleAddToCart = async (dish) => {
+    try {
+      const res = await api.addToCart(dish.id, 1);
+      if (res.success) {
+        Alert.alert('Thành công', 'Đã thêm vào giỏ hàng!');
+        // Optionally: trigger cart badge update here if you have a context or callback
+      } else {
+        Alert.alert('Lỗi', res.message || 'Thêm vào giỏ hàng thất bại!');
+      }
+    } catch (e) {
+      Alert.alert('Lỗi', 'Không thể thêm vào giỏ hàng!');
+    }
+  };
+
   // New render condition to ensure all necessary data is available
   const isDataReady = dataReady.restaurant && dataReady.categories;
   
@@ -333,9 +348,9 @@ const RestaurantViewScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.foodBottomRow}>
                   <Text style={styles.foodPrice}>
-                    {dish.price ? `${new Intl.NumberFormat('vi-VN').format(dish.price)}đ` : ''}
+                    {dish.price ? `${new Intl.NumberFormat('vi-VN').format(dish.price)} đ` : ''}
                   </Text>
-                  <TouchableOpacity style={styles.foodAddBtn}>
+                  <TouchableOpacity style={styles.foodAddBtn} onPress={() => handleAddToCart(dish)}>
                     <Text style={styles.foodAddBtnText}>+</Text>
                   </TouchableOpacity>
                 </View>
@@ -801,4 +816,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RestaurantViewScreen; 
+export default RestaurantViewScreen;

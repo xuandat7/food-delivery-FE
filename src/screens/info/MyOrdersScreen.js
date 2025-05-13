@@ -1,63 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons, Entypo } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { orderAPI as api } from '../../services';
 
-const ORDERS = [
-  {
-    id: '162432',
-    type: 'Food',
-    status: 'Completed',
-    name: 'Pizza Hut',
-    price: 35.25,
-    date: '29 JAN, 12:30',
-    items: 3,
-    cartItem: { id: 1, name: 'Pizza Hut', price: 35.25, size: 'Large', qty: 1 },
-  },
-  {
-    id: '242432',
-    type: 'Drink',
-    status: 'Completed',
-    name: 'McDonald',
-    price: 40.15,
-    date: '30 JAN, 12:30',
-    items: 2,
-    cartItem: { id: 2, name: 'McDonald', price: 40.15, size: 'Large', qty: 1 },
-  },
-  {
-    id: '240112',
-    type: 'Drink',
-    status: 'Canceled',
-    name: 'Starbucks',
-    price: 10.20,
-    date: '30 JAN, 12:30',
-    items: 1,
-    cartItem: { id: 3, name: 'Starbucks', price: 10.20, size: 'Medium', qty: 1 },
-  },
-  {
-    id: '999999',
-    type: 'Food',
-    status: 'Processing',
-    name: 'Burger King',
-    price: 25.00,
-    date: '12 MAY, 14:00',
-    items: 2,
-    cartItem: { id: 4, name: 'Burger King', price: 25.00, size: 'Medium', qty: 1 },
-  },
-];
+const STATUS_PROCESSING = ['pending', 'confirmed', 'processing', 'delivering'];
+const STATUS_HISTORY = ['completed', 'cancelled'];
 
 const MyOrdersScreen = () => {
   const navigation = useNavigation();
   const [tab, setTab] = useState('History');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Lọc đơn hàng theo tab
-  const filteredOrders = tab === 'Processing'
-    ? ORDERS.filter(order => order.status === 'Processing')
-    : ORDERS.filter(order => order.status !== 'Processing');
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      const res = await api.getMyOrders(1, 10);
+      if (res.success && res.data && Array.isArray(res.data.content)) {
+        setOrders(res.data.content);
+      } else {
+        setOrders([]);
+      }
+      setLoading(false);
+    };
+    fetchOrders();
+  }, []);
 
-  // Thêm sản phẩm vào giỏ hàng và chuyển sang EditCart
-  const handleReOrder = (order) => {
-    navigation.navigate('EditCart', { addItem: order.cartItem });
+  // Filter orders by tab
+  const filteredOrders = orders.filter(order =>
+    tab === 'Processing'
+      ? STATUS_PROCESSING.includes(order.status?.toLowerCase())
+      : STATUS_HISTORY.includes(order.status?.toLowerCase())
+  );
+
+  // Format status color
+  const getStatusStyle = (status) => {
+    const s = status?.toLowerCase();
+    if (s === 'completed') return styles.statusCompleted;
+    if (s === 'cancelled') return styles.statusCanceled;
+    return styles.statusProcessing;
+  };
+
+  // Format date
+  const formatDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  // Go to order detail
+  const handleOrderPress = (order) => {
+    navigation.navigate('OrderDetail', { order });
   };
 
   return (
@@ -83,28 +77,34 @@ const MyOrdersScreen = () => {
       </View>
       {/* Orders List */}
       <ScrollView style={styles.orderList} showsVerticalScrollIndicator={false}>
-        {filteredOrders.map((order, idx) => (
-          <View key={order.id} style={styles.orderCard}>
+        {loading ? (
+          <Text style={{ textAlign: 'center', marginTop: 32 }}>Loading...</Text>
+        ) : filteredOrders.length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 32 }}>No orders found.</Text>
+        ) : filteredOrders.map((order) => (
+          <TouchableOpacity key={order.id} style={styles.orderCard} onPress={() => handleOrderPress(order)}>
             <View style={styles.orderHeader}>
-              <Text style={styles.orderType}>{order.type}</Text>
-              <Text style={[
-                styles.orderStatus,
-                order.status === 'Completed' ? styles.statusCompleted : order.status === 'Processing' ? styles.statusProcessing : styles.statusCanceled
-              ]}>{order.status}</Text>
+              <View style={styles.orderHeaderNameWrap}>
+                <Text style={styles.orderType} numberOfLines={1} ellipsizeMode="tail">{order.restaurant?.name || 'Order'}</Text>
+              </View>
+              <View style={styles.orderHeaderStatusWrap}>
+                <Text style={[styles.orderStatus, getStatusStyle(order.status)]} numberOfLines={1} ellipsizeMode="tail">{order.status}</Text>
+              </View>
             </View>
             <View style={styles.orderBody}>
-              <View style={styles.orderImage} />
+              {order.restaurant?.image_url ? (
+                <Image source={{ uri: order.restaurant.image_url }} style={styles.orderImage} />
+              ) : (
+                <View style={styles.orderImage} />
+              )}
               <View style={{ flex: 1 }}>
-                <Text style={styles.orderName}>{order.name}</Text>
-                <Text style={styles.orderPrice}>${order.price.toFixed(2)}</Text>
-                <Text style={styles.orderMeta}>{order.date}  •  {order.items} Items</Text>
+                <Text style={styles.orderName}>{order.restaurant?.name || 'Order'}</Text>
+                <Text style={styles.orderPrice}>{new Intl.NumberFormat('vi-VN').format(order.total_price)} đ</Text>
+                <Text style={styles.orderMeta}>{formatDate(order.created_at)}  •  {order.totalItems} Items</Text>
               </View>
               <Text style={styles.orderId}>#{order.id}</Text>
             </View>
-            <View style={styles.orderActions}>
-              {/* Bỏ nút Re-Order */}
-            </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>
@@ -123,9 +123,11 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#ff7621', fontWeight: '700', borderBottomWidth: 2, borderColor: '#ff7621' },
   orderList: { width: '100%', paddingHorizontal: 0 },
   orderCard: { backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 24, marginVertical: 10, padding: 16, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
-  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, alignItems: 'center' },
+  orderHeaderNameWrap: { flex: 1, marginRight: 8, maxWidth: '40%' },
+  orderHeaderStatusWrap: { minWidth: 80, maxWidth: 120, alignItems: 'flex-end', justifyContent: 'center' },
   orderType: { color: '#181c2e', fontSize: 15, fontWeight: '500' },
-  orderStatus: { fontSize: 15, fontWeight: '500' },
+  orderStatus: { fontSize: 15, fontWeight: '500', textAlign: 'right' },
   statusCompleted: { color: '#1ec28b' },
   statusCanceled: { color: '#ff3b30' },
   statusProcessing: { color: '#ff9900' },

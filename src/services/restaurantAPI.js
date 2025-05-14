@@ -843,7 +843,7 @@ const restaurantAPI = {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
       
-      const response = await fetch(`${BASE_URL}/statistics/total-revenue`, {
+      const response = await fetch(`${BASE_URL}/statistics/my-restaurant/total-revenue`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

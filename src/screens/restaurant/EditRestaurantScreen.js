@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     width: 41,
     height: 41,
     borderRadius: 20.5,
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     position: 'absolute',
     bottom: 0,
     right: 0,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   },
   editableInput: {
     borderWidth: 1,
-    borderColor: '#FB6D3A',
+    borderColor: '#3498db',
     color: '#000000',
   },
   nonEditableInput: {
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     height: 56,
-    backgroundColor: '#FB6D3A',
+    backgroundColor: '#3498db',
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',

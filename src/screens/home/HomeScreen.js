@@ -74,6 +74,9 @@ const HomeScreen = () => {
   // Fetch cart count mỗi khi HomeScreen được focus
   useFocusEffect(
     React.useCallback(() => {
+      // Tải lại tên người dùng mỗi khi màn hình được focus
+      fetchUserInfo();
+      
       const fetchCartCount = async () => {
         try {
           const res = await cartAPI.getCart();
@@ -101,17 +104,9 @@ const HomeScreen = () => {
   // Hàm lấy thông tin người dùng
   const fetchUserInfo = async () => {
     try {
-      // Đầu tiên kiểm tra xem có thông tin người dùng đã lưu trong AsyncStorage không
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        if (user.fullName || user.full_name) {
-          setUserName(user.fullName || user.full_name);
-          return;
-        }
-      }
+      console.log('Fetching user info...');
       
-      // Nếu không có thông tin trong AsyncStorage, gọi API để lấy
+      // Gọi API để lấy thông tin mới nhất
       const response = await userAPI.getProfile();
       console.log('User profile response:', response);
       
@@ -122,6 +117,7 @@ const HomeScreen = () => {
         // Lấy tên từ các trường có thể có
         const name = response.data.fullName || response.data.full_name || response.data.name;
         if (name) {
+          console.log('Setting user name to:', name);
           setUserName(name);
           
           // Lưu tên riêng để sử dụng sau này
@@ -130,10 +126,34 @@ const HomeScreen = () => {
           setUserName("bạn");
         }
       } else {
+        // Nếu API thất bại, thử lấy từ AsyncStorage
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.fullName || user.full_name) {
+            setUserName(user.fullName || user.full_name);
+            return;
+          }
+        }
         setUserName("bạn");
       }
     } catch (error) {
       console.error('Error fetching user info:', error);
+      
+      // Nếu có lỗi, thử lấy từ AsyncStorage
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user.fullName || user.full_name) {
+            setUserName(user.fullName || user.full_name);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Error reading from AsyncStorage:', e);
+      }
+      
       setUserName("bạn");
     }
   };

@@ -249,7 +249,14 @@ const EditProfileScreen = () => {
         <View style={styles.top}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              // Use replace instead of goBack for better transitions
+              if (info.id) {
+                navigation.navigate('RestaurantTabs');
+              } else {
+                navigation.navigate('PersonalInfo', { userData });
+              }
+            }}
           >
             <Ionicons name="chevron-back" size={20} color="#333" />
           </TouchableOpacity>

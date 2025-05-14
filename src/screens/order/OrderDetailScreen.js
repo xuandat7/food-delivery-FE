@@ -23,7 +23,12 @@ const OrderDetailScreen = () => {
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.circleBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity 
+          style={styles.circleBtn} 
+          onPress={() => {
+            navigation.navigate('MyOrdersScreen');
+          }}
+        >
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.title}>Đơn hàng #{order.id}</Text>

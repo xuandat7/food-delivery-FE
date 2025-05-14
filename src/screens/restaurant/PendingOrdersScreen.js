@@ -180,7 +180,7 @@ const PendingOrdersScreen = () => {
           />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} style={{ color: '#888', fontSize: 14, marginBottom: 2 }}>{item.user?.fullName || 'Ẩn danh'}</Text>
+          {/* <Text numberOfLines={1} style={{ color: '#888', fontSize: 14, marginBottom: 2 }}>{item.user?.fullName || 'Ẩn danh'}</Text> */}
           <Text numberOfLines={1} style={{ fontWeight: 'bold', fontSize: 17, color: '#181C2E', marginBottom: 2 }}>{item.restaurant_name || item.user?.fullName || 'Đơn hàng'}</Text>
           <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#181C2E', marginBottom: 2 }}>{parseInt(item.total_price).toLocaleString()} đ</Text>
           <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{item.created_at?.slice(11, 16)} {item.created_at?.slice(8, 10)} thg {item.created_at?.slice(5, 7)}, {item.created_at?.slice(0, 4)}  •  {item.totalItems} món</Text>

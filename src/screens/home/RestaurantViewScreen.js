@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 24,
-    paddingTop: 50,
+    paddingTop: 10,
   },
   loadingContainer: {
     flex: 1,

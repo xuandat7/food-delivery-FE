@@ -6,7 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Alert
+  Alert,
+  LogBox
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
@@ -15,6 +16,16 @@ import Feather from 'react-native-vector-icons/Feather';
 import RunningOrdersScreen from './RunningOrdersScreen';
 import { AsyncStorage, restaurantAPI } from '../../services';
 import statisticsAPI from '../../services/statisticsAPI';
+import { notifyNewOrder } from '../../services/notifications';
+
+// Bỏ qua các cảnh báo không cần thiết
+LogBox.ignoreLogs([
+  'Warning: Failed prop type', 
+  'VirtualizedLists should never be nested',
+  'Warning: Each child in a list',
+  'Non-serializable values were found in the navigation state',
+  'Component Exception: ngày' // Bỏ qua cảnh báo liên quan đến "ngày"
+]);
 
 // Biểu đồ doanh thu
 const RevenueChart = ({ data }) => {
@@ -58,6 +69,8 @@ const SellerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
   const [timeFilter, setTimeFilter] = useState('daily');
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [previousPendingCount, setPreviousPendingCount] = useState(0);
 
   // Fetch restaurant info & dashboard
   useEffect(() => {
@@ -84,6 +97,72 @@ const SellerDashboard = () => {
     if (isFocused) fetchData();
   }, [isFocused, timeFilter]);
 
+  // Kiểm tra đơn hàng mới mỗi 2 giây
+  useEffect(() => {
+    let intervalId;
+    
+    const checkForNewOrders = async () => {
+      try {
+        const res = await restaurantAPI.getRestaurantOrders(0, 30);
+        if (res.success && Array.isArray(res.data?.content)) {
+          // Lọc đơn hàng đang chờ
+          const pendingList = res.data.content.filter(o => o.status === 'pending');
+          setPendingOrders(pendingList);
+          
+          // Kiểm tra nếu có đơn hàng mới
+          if (pendingList.length > previousPendingCount && previousPendingCount > 0) {
+            const newOrdersCount = pendingList.length - previousPendingCount;
+            
+            // Hiển thị thông báo có đơn hàng mới
+            try {
+              await notifyNewOrder(newOrdersCount);
+              console.log(`Thông báo đã được gửi cho ${newOrdersCount} đơn hàng mới`);
+            } catch (notificationError) {
+              console.error('Lỗi khi hiển thị thông báo:', notificationError);
+            }
+            
+            // Hiển thị cảnh báo trong ứng dụng
+            Alert.alert(
+              'Đơn hàng mới!', 
+              `Bạn có ${newOrdersCount} đơn hàng mới đang chờ xác nhận`,
+              [
+                { 
+                  text: 'Xem ngay', 
+                  onPress: () => {
+                    console.log('Chuyển đến tab Đơn hàng');
+                    // Sử dụng CommonActions để chuyển đến tab 'Đơn hàng' trong tab navigator
+                    navigation.dispatch(
+                      CommonActions.navigate({
+                        name: 'Đơn hàng'
+                      })
+                    );
+                  } 
+                },
+                { text: 'Để sau' }
+              ]
+            );
+          }
+          
+          // Cập nhật số lượng đơn hàng trước đó
+          setPreviousPendingCount(pendingList.length);
+        }
+      } catch (error) {
+        console.error('Lỗi khi kiểm tra đơn hàng mới:', error);
+      }
+    };
+    
+    // Chỉ chạy kiểm tra khi màn hình đang hiển thị
+    if (isFocused) {
+      // Thiết lập interval kiểm tra mỗi 2 giây
+      intervalId = setInterval(checkForNewOrders, 2000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isFocused, previousPendingCount, navigation]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,10 +181,6 @@ const SellerDashboard = () => {
             <Ionicons name="chevron-down-sharp" size={8} color="#676767" style={{ marginLeft: 8, marginTop: 5 }} />
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.profileImage}
-          onPress={() => navigation.navigate('ProfileScreen')}
-        />
       </View>
       {isLoading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -124,20 +199,14 @@ const SellerDashboard = () => {
           </View>
           {/* Running Orders and Order Requests */}
           <View style={styles.statsContainer}>
-            <TouchableOpacity
-              style={styles.statsCard}
-              
-            >
+            <View style={styles.statsCard}>
               <Text style={styles.statsNumber}>{dashboard.runningOrders}</Text>
               <Text style={styles.statsLabel}>Đơn hàng</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.statsCard}
-              
-            >
-              <Text style={styles.statsNumber}>{dashboard.orderRequests}</Text>
+            </View>
+            <View style={styles.statsCard}>
+              <Text style={styles.statsNumber}>{pendingOrders.length || dashboard.orderRequests}</Text>
               <Text style={styles.statsLabel}>Đơn hàng mới</Text>
-            </TouchableOpacity>
+            </View>
           </View>
           {/* Revenue Card */}
           <View className="revenueCard" style={styles.revenueCard}>
@@ -163,8 +232,6 @@ const SellerDashboard = () => {
           </View>
         </ScrollView>
       ) : null}
-      {/* Display running orders modal if needed */}
-      
     </SafeAreaView>
   );
 };

@@ -31,12 +31,14 @@ const EditProfileScreen = () => {
   const userData = route.params?.userData || {};
   // Nếu là nhà hàng thì lấy info, nếu là user thì lấy userData
   const [name, setName] = useState(info.name || userData.full_name || userData.fullName || '');
+  const [fullName, setFullName] = useState(userData.full_name || userData.fullName || '');
   const [email, setEmail] = useState(info.email || userData.email || userData.account?.email || '');
   const [phone, setPhone] = useState(info.phone || userData.phone || '');
   const [address, setAddress] = useState(info.address || userData.address || '');
   const [description, setDescription] = useState(info.description || userData.description || '');
   const [avatar, setAvatar] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   // Keyboard states
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -330,10 +332,17 @@ const EditProfileScreen = () => {
         {/* Save Button */}
         <TouchableOpacity
           style={styles.saveButton}
-          onPress={handleSaveRestaurant}
-          disabled={loading}
+          onPress={() => {
+            // Nếu có info.id, đây là nhà hàng, ngược lại là user bình thường
+            if (info.id) {
+              handleSaveRestaurant();
+            } else {
+              handleSave();
+            }
+          }}
+          disabled={loading || isLoading}
         >
-          {loading ? (
+          {(loading || isLoading) ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
             <Text style={styles.saveButtonText}>LƯU</Text>
@@ -356,7 +365,7 @@ const styles = StyleSheet.create({
   top: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 10,
     marginLeft: 24,
     marginBottom: 30,
   },

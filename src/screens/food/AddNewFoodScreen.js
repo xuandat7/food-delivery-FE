@@ -386,7 +386,7 @@ const AddNewFoodScreen = () => {
           {isEditing ? 'Chỉnh sửa món ăn' : 'Thêm món ăn mới'}
         </Text>
         <TouchableOpacity onPress={handleReset}>
-          <Text style={styles.resetButton}>RESET</Text>
+          <Text style={styles.resetButton}></Text>
         </TouchableOpacity>
       </View>
       

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { Ionicons, Entypo } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { orderAPI as api } from '../../services';
 
@@ -61,34 +61,40 @@ const MyOrdersScreen = () => {
         <TouchableOpacity style={styles.circleBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>My Orders</Text>
-        <TouchableOpacity style={styles.circleBtn}>
-          <Entypo name="dots-three-horizontal" size={20} color="#333" />
-        </TouchableOpacity>
+        <Text style={styles.title}>Đơn hàng của tôi</Text>
+        <View style={{width: 45}}></View>
       </View>
       {/* Tabs */}
       <View style={styles.tabRow}>
         <TouchableOpacity onPress={() => setTab('Processing')} style={[styles.tabBtn, tab === 'Processing' && styles.tabBtnActive]}>
-          <Text style={[styles.tabText, tab === 'Processing' && styles.tabTextActive]}>Processing</Text>
+          <Text style={[styles.tabText, tab === 'Processing' && styles.tabTextActive]}>Đang xử lý</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setTab('History')} style={[styles.tabBtn, tab === 'History' && styles.tabBtnActive]}>
-          <Text style={[styles.tabText, tab === 'History' && styles.tabTextActive]}>History</Text>
+          <Text style={[styles.tabText, tab === 'History' && styles.tabTextActive]}>Lịch sử</Text>
         </TouchableOpacity>
       </View>
       {/* Orders List */}
       <ScrollView style={styles.orderList} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <Text style={{ textAlign: 'center', marginTop: 32 }}>Loading...</Text>
+          <Text style={{ textAlign: 'center', marginTop: 32 }}>Đang tải...</Text>
         ) : filteredOrders.length === 0 ? (
-          <Text style={{ textAlign: 'center', marginTop: 32 }}>No orders found.</Text>
+          <Text style={{ textAlign: 'center', marginTop: 32 }}>Không tìm thấy đơn hàng nào.</Text>
         ) : filteredOrders.map((order) => (
           <TouchableOpacity key={order.id} style={styles.orderCard} onPress={() => handleOrderPress(order)}>
             <View style={styles.orderHeader}>
               <View style={styles.orderHeaderNameWrap}>
-                <Text style={styles.orderType} numberOfLines={1} ellipsizeMode="tail">{order.restaurant?.name || 'Order'}</Text>
+                <Text style={styles.orderType} numberOfLines={1} ellipsizeMode="tail">{order.restaurant?.name || 'Đơn hàng'}</Text>
               </View>
               <View style={styles.orderHeaderStatusWrap}>
-                <Text style={[styles.orderStatus, getStatusStyle(order.status)]} numberOfLines={1} ellipsizeMode="tail">{order.status}</Text>
+                <Text style={[styles.orderStatus, getStatusStyle(order.status)]} numberOfLines={1} ellipsizeMode="tail">
+                  {order.status?.toLowerCase() === 'completed' ? 'Hoàn thành' : 
+                   order.status?.toLowerCase() === 'cancelled' ? 'Đã hủy' : 
+                   order.status?.toLowerCase() === 'pending' ? 'Chờ xác nhận' : 
+                   order.status?.toLowerCase() === 'confirmed' ? 'Đã xác nhận' : 
+                   order.status?.toLowerCase() === 'processing' ? 'Đang chuẩn bị' : 
+                   order.status?.toLowerCase() === 'delivering' ? 'Đang giao' : 
+                   order.status}
+                </Text>
               </View>
             </View>
             <View style={styles.orderBody}>
@@ -98,9 +104,9 @@ const MyOrdersScreen = () => {
                 <View style={styles.orderImage} />
               )}
               <View style={{ flex: 1 }}>
-                <Text style={styles.orderName}>{order.restaurant?.name || 'Order'}</Text>
+                <Text style={styles.orderName}>{order.restaurant?.name || 'Đơn hàng'}</Text>
                 <Text style={styles.orderPrice}>{new Intl.NumberFormat('vi-VN').format(order.total_price)} đ</Text>
-                <Text style={styles.orderMeta}>{formatDate(order.created_at)}  •  {order.totalItems} Items</Text>
+                <Text style={styles.orderMeta}>{formatDate(order.created_at)}  •  {order.totalItems} món</Text>
               </View>
               <Text style={styles.orderId}>#{order.id}</Text>
             </View>

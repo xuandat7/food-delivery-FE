@@ -143,11 +143,11 @@ const EditCart = () => {
             <Ionicons name="chevron-back" size={28} color="#fff" />
           </TouchableOpacity>
           <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: -1 }}>
-            <Text style={styles.cartTitle}>Cart</Text>
+            <Text style={styles.cartTitle}>Giỏ hàng</Text>
           </View>
           {cartItems.length > 0 && (
             <TouchableOpacity onPress={() => editMode ? handleDoneEdit() : setEditMode(true)}>
-              <Text style={[styles.editItems, editMode && { color: '#1ec28b' }]}>{editMode ? 'DONE' : 'EDIT ITEMS'}</Text>
+              <Text style={[styles.editItems, editMode && { color: '#1ec28b' }]}>{editMode ? 'XONG' : 'CHỈNH SỬA'}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -155,12 +155,12 @@ const EditCart = () => {
         {/* Cart Items */}
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ color: '#fff' }}>Loading cart...</Text>
+            <Text style={{ color: '#fff' }}>Đang tải giỏ hàng...</Text>
           </View>
         ) : (
           <ScrollView style={styles.cartList} keyboardShouldPersistTaps="handled">
             {cartItems.length === 0 ? (
-              <Text style={{ color: '#fff', textAlign: 'center', marginTop: 32 }}>Your cart is empty.</Text>
+              <Text style={{ color: '#fff', textAlign: 'center', marginTop: 32 }}>Giỏ hàng của bạn đang trống.</Text>
             ) : (
               cartItems.map(item => (
                 <View style={styles.cartItem} key={item.id}>
@@ -206,17 +206,17 @@ const EditCart = () => {
         {/* Delivery Address & Total */}
         <View style={styles.infoSection}>
           <View style={styles.addressRow}>
-            <Text style={styles.addressLabel}>DELIVERY ADDRESS</Text>
+            <Text style={styles.addressLabel}>ĐỊA CHỈ GIAO HÀNG</Text>
             {editingAddress ? (
               <TouchableOpacity onPress={handleSaveAddress}>
-                <Text style={styles.editAddress}>SAVE</Text>
+                <Text style={styles.editAddress}>LƯU</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity onPress={() => {
                 setEditingAddress(true);
                 setAddressInput(address);
               }}>
-                <Text style={styles.editAddress}>EDIT</Text>
+                <Text style={styles.editAddress}>SỬA</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -227,7 +227,7 @@ const EditCart = () => {
                 value={addressInput}
                 onChangeText={setAddressInput}
                 autoFocus
-                placeholder="Enter delivery address"
+                placeholder="Nhập địa chỉ giao hàng"
                 placeholderTextColor="#a0a5ba"
                 returnKeyType="done"
               />
@@ -236,16 +236,16 @@ const EditCart = () => {
             )}
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>TOTAL:</Text>
+            <Text style={styles.totalLabel}>TỔNG CỘNG:</Text>
             <Text style={styles.totalValue}>{new Intl.NumberFormat('vi-VN').format(total)} đ</Text>
-            {/* <TouchableOpacity><Text style={styles.breakdown}>Breakdown</Text></TouchableOpacity> */}
+            {/* <TouchableOpacity><Text style={styles.breakdown}>Chi tiết</Text></TouchableOpacity> */}
           </View>
           <TouchableOpacity
             style={[styles.placeOrderBtn, cartItems.length === 0 && { opacity: 0.5 }]}
             onPress={handlePlaceOrder}
             disabled={cartItems.length === 0}
           >
-            <Text style={styles.placeOrderText}>PLACE ORDER</Text>
+            <Text style={styles.placeOrderText}>ĐẶT HÀNG</Text>
           </TouchableOpacity>
         </View>
       </View>

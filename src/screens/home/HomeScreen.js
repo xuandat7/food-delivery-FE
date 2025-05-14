@@ -35,11 +35,11 @@ const HomeScreen = () => {
           // Xác định lời chào dựa vào thời gian
           const hour = new Date().getHours();
           if (hour < 12) {
-            setGreeting("buổi sáng");
+            setGreeting("Chào buổi sáng");
           } else if (hour < 18) {
-            setGreeting("buổi chiều");
+            setGreeting("Chào buổi chiều");
           } else {
-            setGreeting("buổi tối");
+            setGreeting("Chào buổi tối");
           }
           
           // Token is valid, continue to Home
@@ -169,7 +169,7 @@ const HomeScreen = () => {
 
         {/* Greeting */}
         <View className="px-4 mt-4 mb-3">
-          <Text className="text-xl font-medium">Xin chào <Text className="font-bold">{userName}</Text>, {greeting}!</Text>
+          <Text className="text-xl font-medium"><Text className="font-bold">{userName}</Text>, {greeting}!</Text>
         </View>
 
         <View className="px-4">

@@ -26,8 +26,8 @@ const OrderDetailScreen = () => {
         <TouchableOpacity style={styles.circleBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>Order #{order.id}</Text>
-        <View style={styles.circleBtn} />
+        <Text style={styles.title}>Đơn hàng #{order.id}</Text>
+        <View style={{width: 45}} />
       </View>
       {/* Restaurant Info */}
       <View style={styles.restaurantRow}>
@@ -44,7 +44,15 @@ const OrderDetailScreen = () => {
       {/* Order Status & Info */}
       <View style={styles.infoRow}>
         <Text style={styles.infoLabel}>Trạng thái:</Text>
-        <Text style={styles.infoValue}>{order.status}</Text>
+        <Text style={styles.infoValue}>
+          {order.status?.toLowerCase() === 'completed' ? 'Hoàn thành' : 
+           order.status?.toLowerCase() === 'cancelled' ? 'Đã hủy' : 
+           order.status?.toLowerCase() === 'pending' ? 'Chờ xác nhận' : 
+           order.status?.toLowerCase() === 'confirmed' ? 'Đã xác nhận' : 
+           order.status?.toLowerCase() === 'processing' ? 'Đang chuẩn bị' : 
+           order.status?.toLowerCase() === 'delivering' ? 'Đang giao' : 
+           order.status}
+        </Text>
       </View>
       <View style={styles.infoRow}>
         <Text style={styles.infoLabel}>Ngày đặt:</Text>
@@ -85,7 +93,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 24, paddingTop: 40 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   circleBtn: { width: 45, height: 45, borderRadius: 22.5, backgroundColor: '#ecf0f4', justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 17, fontWeight: '400', color: '#181c2e' },
+  title: { fontSize: 17, fontWeight: '400', color: '#181c2e', flex: 1, textAlign: 'center' },
   restaurantRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   restaurantImg: { width: 64, height: 64, borderRadius: 12, backgroundColor: '#b0b7c3', opacity: 0.7 },
   restaurantName: { fontSize: 18, fontWeight: '700', color: '#181c2e' },

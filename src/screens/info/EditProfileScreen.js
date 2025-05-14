@@ -214,7 +214,7 @@ const EditProfileScreen = () => {
           >
             <Ionicons name="chevron-back" size={20} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>Edit Profile</Text>
+          <Text style={styles.title}>Chỉnh sửa hồ sơ</Text>
         </View>
 
         {/* Profile Image */}
@@ -233,12 +233,12 @@ const EditProfileScreen = () => {
 
         {/* Form Fields */}
         <View style={styles.formField}>
-          <Text style={styles.label}>FULL NAME</Text>
+          <Text style={styles.label}>HỌ VÀ TÊN</Text>
           <TextInput
             style={[styles.input, styles.editableInput]}
             value={fullName}
             onChangeText={setFullName}
-            placeholder="Enter your full name"
+            placeholder="Nhập họ và tên của bạn"
             placeholderTextColor="#000000"
             ref={fullNameRef}
             returnKeyType="next"
@@ -253,7 +253,7 @@ const EditProfileScreen = () => {
             style={[styles.input, styles.nonEditableInput]}
             value={email}
             onChangeText={setEmail}
-            placeholder="Enter your email"
+            placeholder="Nhập email của bạn"
             placeholderTextColor="#6B6E82"
             keyboardType="email-address"
             editable={false}
@@ -262,12 +262,12 @@ const EditProfileScreen = () => {
         </View>
 
         <View style={styles.formField}>
-          <Text style={styles.label}>PHONE NUMBER</Text>
+          <Text style={styles.label}>SỐ ĐIỆN THOẠI</Text>
           <TextInput
             style={[styles.input, styles.editableInput]}
             value={phone}
             onChangeText={setPhone}
-            placeholder="Enter your phone number"
+            placeholder="Nhập số điện thoại của bạn"
             placeholderTextColor="#000000"
             keyboardType="phone-pad"
             ref={phoneRef}
@@ -278,12 +278,12 @@ const EditProfileScreen = () => {
         </View>
 
         <View style={styles.formField}>
-          <Text style={styles.label}>ADDRESS</Text>
+          <Text style={styles.label}>ĐỊA CHỈ</Text>
           <TextInput
             style={[styles.input, styles.editableInput]}
             value={address}
             onChangeText={setAddress}
-            placeholder="Enter your address"
+            placeholder="Nhập địa chỉ của bạn"
             placeholderTextColor="#000000"
             ref={addressRef}
             onFocus={() => handleInputFocus(addressRef)}
@@ -299,7 +299,7 @@ const EditProfileScreen = () => {
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.saveButtonText}>SAVE</Text>
+            <Text style={styles.saveButtonText}>LƯU</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

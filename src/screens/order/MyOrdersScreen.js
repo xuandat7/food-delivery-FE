@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { orderAPI as api } from '../../services';
@@ -12,20 +12,34 @@ const MyOrdersScreen = () => {
   const [tab, setTab] = useState('History');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
       const res = await api.getMyOrders(1, 10);
       if (res.success && res.data && Array.isArray(res.data.content)) {
         setOrders(res.data.content);
       } else {
         setOrders([]);
       }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      setOrders([]);
+    } finally {
       setLoading(false);
-    };
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+  };
 
   // Filter orders by tab
   const filteredOrders = orders.filter(order =>
@@ -74,8 +88,19 @@ const MyOrdersScreen = () => {
         </TouchableOpacity>
       </View>
       {/* Orders List */}
-      <ScrollView style={styles.orderList} showsVerticalScrollIndicator={false}>
-        {loading ? (
+      <ScrollView 
+        style={styles.orderList} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#ff7621']}
+            tintColor="#ff7621"
+          />
+        }
+      >
+        {loading && !refreshing ? (
           <Text style={{ textAlign: 'center', marginTop: 32 }}>Đang tải...</Text>
         ) : filteredOrders.length === 0 ? (
           <Text style={{ textAlign: 'center', marginTop: 32 }}>Không tìm thấy đơn hàng nào.</Text>

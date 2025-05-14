@@ -1,21 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Nếu bạn dùng Expo, hoặc dùng react-native-vector-icons
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { cartAPI } from '../../services';
+import { cartAPI, userAPI, AsyncStorage } from '../../services';
 
 const EditCart = () => {
   // State for cart items
   const [cartItems, setCartItems] = useState([]);
   // State for address
-  const [address, setAddress] = useState('2118 Thornridge Cir. Syracuse');
+  const [address, setAddress] = useState('');
   const [editingAddress, setEditingAddress] = useState(false);
-  const [addressInput, setAddressInput] = useState(address);
+  const [addressInput, setAddressInput] = useState('');
   const [editMode, setEditMode] = useState(false);
   const [cartId, setCartId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState(null);
+  const [addressLoading, setAddressLoading] = useState(true);
   const navigation = useNavigation();
   const route = useRoute();
+
+  // Fetch user profile to get address
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setAddressLoading(true);
+        console.log('Fetching user address...');
+        
+        // First try to get user data from AsyncStorage
+        const userData = await AsyncStorage.getItem('userData');
+        let userAddress = '';
+        let userProfileData = null;
+        
+        if (userData) {
+          const parsedUserData = JSON.parse(userData);
+          setUserProfile(parsedUserData);
+          
+          // Get address from local storage if available
+          if (parsedUserData.address) {
+            userAddress = parsedUserData.address;
+            console.log('Found address in AsyncStorage:', userAddress);
+          }
+        }
+        
+        // Always try to fetch the latest data from API as well
+        try {
+          const response = await userAPI.getProfile();
+          console.log('API response for user profile:', response);
+          
+          if (response.success && response.data) {
+            // Update user profile with latest data from API
+            setUserProfile(response.data);
+            userProfileData = response.data;
+            
+            // If API has an address and it's different from what we have locally, update it
+            if (response.data.address && (!userAddress || response.data.address !== userAddress)) {
+              userAddress = response.data.address;
+              console.log('Updated address from API:', userAddress);
+              
+              // Update the local storage with the new address
+              if (userData) {
+                const parsedUserData = JSON.parse(userData);
+                const updatedUserData = { ...parsedUserData, address: userAddress };
+                await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+              }
+            }
+          }
+        } catch (apiError) {
+          console.error('Error fetching user profile from API:', apiError);
+          // Continue with local data if API fails
+        }
+        
+        // Update the address state with whatever we found
+        setAddress(userAddress);
+        setAddressInput(userAddress);
+        
+        setAddressLoading(false);
+      } catch (error) {
+        console.error('Error in fetch user profile process:', error);
+        setAddressLoading(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, []);
 
   // Fetch cart from API
   useEffect(() => {
@@ -121,13 +188,53 @@ const EditCart = () => {
   const total = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   // Address save handler
-  const handleSaveAddress = () => {
-    setAddress(addressInput);
-    setEditingAddress(false);
+  const handleSaveAddress = async () => {
+    try {
+      setAddress(addressInput);
+      setEditingAddress(false);
+      
+      // Nếu có userProfile, cập nhật địa chỉ vào thông tin user
+      if (userProfile) {
+        // Cập nhật địa chỉ vào AsyncStorage
+        const updatedUserData = { ...userProfile, address: addressInput };
+        await AsyncStorage.setItem('userData', JSON.stringify(updatedUserData));
+        setUserProfile(updatedUserData);
+        
+        // Cập nhật địa chỉ lên server (nếu API hỗ trợ)
+        try {
+          await userAPI.updateProfile(userProfile.id, { address: addressInput });
+          console.log('Updated user address successfully');
+        } catch (error) {
+          console.error('Failed to update user address on server:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving address:', error);
+    }
   };
 
   const handlePlaceOrder = () => {
-    navigation.navigate('PaymentMethod', { total });
+    // Kiểm tra xem có địa chỉ giao hàng chưa
+    if (!address.trim()) {
+      // Nếu chưa có địa chỉ, mở chức năng chỉnh sửa địa chỉ
+      setEditingAddress(true);
+      setAddressInput('');
+      
+      // Hiển thị cảnh báo cho người dùng
+      Alert.alert(
+        "Địa chỉ giao hàng",
+        "Vui lòng nhập địa chỉ giao hàng để tiếp tục đặt hàng",
+        [
+          { text: "OK", onPress: () => console.log("OK Pressed") }
+        ]
+      );
+      return;
+    }
+    
+    // Nếu có địa chỉ và có sản phẩm trong giỏ hàng, chuyển sang màn hình thanh toán
+    if (cartItems.length > 0) {
+      navigation.navigate('PaymentMethod', { total, address });
+    }
   };
 
   return (
@@ -221,7 +328,12 @@ const EditCart = () => {
             )}
           </View>
           <View style={styles.addressBox}>
-            {editingAddress ? (
+            {addressLoading ? (
+              <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+                <ActivityIndicator size="small" color="#ff7621" />
+                <Text style={{ color: '#a0a5ba', fontSize: 12, marginTop: 4 }}>Đang tải địa chỉ...</Text>
+              </View>
+            ) : editingAddress ? (
               <TextInput
                 style={[styles.addressText, { color: '#31343d', opacity: 1 }]}
                 value={addressInput}
@@ -232,7 +344,9 @@ const EditCart = () => {
                 returnKeyType="done"
               />
             ) : (
-              <Text style={styles.addressText}>{address}</Text>
+              <Text style={[styles.addressText, !address && { color: '#ff7621' }]}>
+                {address || 'Vui lòng nhập địa chỉ giao hàng của bạn'}
+              </Text>
             )}
           </View>
           <View style={styles.totalRow}>
@@ -241,9 +355,9 @@ const EditCart = () => {
             {/* <TouchableOpacity><Text style={styles.breakdown}>Chi tiết</Text></TouchableOpacity> */}
           </View>
           <TouchableOpacity
-            style={[styles.placeOrderBtn, cartItems.length === 0 && { opacity: 0.5 }]}
+            style={[styles.placeOrderBtn, (cartItems.length === 0 || addressLoading) && { opacity: 0.5 }]}
             onPress={handlePlaceOrder}
-            disabled={cartItems.length === 0}
+            disabled={cartItems.length === 0 || addressLoading}
           >
             <Text style={styles.placeOrderText}>ĐẶT HÀNG</Text>
           </TouchableOpacity>

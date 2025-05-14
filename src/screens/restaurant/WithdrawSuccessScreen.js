@@ -49,7 +49,7 @@ const WithdrawSuccessScreen = ({ visible, onClose }) => {
           </View>
           
           {/* Success Text */}
-          <Text style={styles.successText}>Withdraw Successful</Text>
+          <Text style={styles.successText}>Rút tiền thành công!</Text>
           
           {/* OK Button */}
           <TouchableOpacity style={styles.okButton} onPress={onClose}>

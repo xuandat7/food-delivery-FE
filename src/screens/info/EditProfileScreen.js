@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   top: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 50,
     marginLeft: 24,
     marginBottom: 30,
   },

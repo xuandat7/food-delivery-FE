@@ -30,8 +30,9 @@ const ProfileScreen = () => {
       try {
         setLoading(true);
         const response = await restaurantAPI.getTotalRevenue();
-        if (response.success && response.data) {
-          setBalance(response.data.totalRevenue || 0);
+        console.log('Total revenue response:', response);
+        if (response) {
+          setBalance(response.totalRevenue || 0);
         } else {
           console.error('Failed to fetch revenue:', response.message);
         }

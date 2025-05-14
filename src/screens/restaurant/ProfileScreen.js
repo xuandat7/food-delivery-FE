@@ -130,7 +130,7 @@ const ProfileScreen = () => {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Profile</Text>
+          <Text style={styles.headerTitle}>Trang cá nhân</Text>
         </View>        <Text style={styles.balanceLabel}>Doanh thu hiện có</Text>
         {loading ? (
           <ActivityIndicator size="large" color="#FFFFFF" style={{ marginVertical: 10 }} />
@@ -158,7 +158,7 @@ const ProfileScreen = () => {
           <View style={[styles.iconContainer, styles.userIcon]}>
             <AntDesign name="user" size={22} color="#3498db" />
           </View>
-          <Text style={styles.menuText}>Personal Info</Text>
+          <Text style={styles.menuText}>Thông tin nhà hàng</Text>
           <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
         </TouchableOpacity>
         
@@ -166,13 +166,13 @@ const ProfileScreen = () => {
           <View style={[styles.iconContainer, styles.settingsIcon]}>
             <Ionicons name="settings-outline" size={22} color="#4F46E5" />
           </View>
-          <Text style={styles.menuText}>Settings</Text>
+          <Text style={styles.menuText}>Cài đặt</Text>
           <Ionicons name="chevron-forward" size={20} color="#CCCCCC" style={styles.arrowIcon} />
         </TouchableOpacity>
       </View>
       
       {/* Withdrawal History Section */}
-      <View style={styles.menuSection}>
+      {/* <View style={styles.menuSection}>
         <TouchableOpacity style={styles.menuItem} onPress={handleWithdrawalHistory}>
           <View style={[styles.iconContainer, styles.withdrawalIcon]}>
             <AntDesign name="creditcard" size={22} color="#3498db" />
@@ -188,7 +188,7 @@ const ProfileScreen = () => {
           <Text style={styles.menuText}>Number of Orders</Text>
           <Text style={styles.orderCount}>29K</Text>
         </View>
-      </View>
+      </View> */}
       
       {/* User Reviews Section */}
       <View style={styles.menuSection}>

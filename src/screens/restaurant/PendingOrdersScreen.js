@@ -247,18 +247,18 @@ const PendingOrdersScreen = () => {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 50, paddingBottom: 10, backgroundColor: '#fff' }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', left: 16, top: 50, zIndex: 2 }}>
-          <Ionicons name="arrow-back" size={24} color="#FB6D3A" />
+          <Ionicons name="arrow-back" size={24} color="#3498db" />
         </TouchableOpacity>
         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#181C2E' }}>Đơn hàng</Text>
       </View>      {/* Tabs */}
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F2F2F2', marginBottom: 8 }}>
         <TouchableOpacity onPress={() => setTab('processing')} style={{ flex: 1, alignItems: 'center', paddingVertical: 10 }}>
-          <Text style={{ fontSize: 17, fontWeight: 'bold', color: tab === 'processing' ? '#FB6D3A' : '#B0AEB8' }}>Đang chờ</Text>
-          {tab === 'processing' && <View style={{ height: 3, backgroundColor: '#FB6D3A', borderRadius: 2, marginTop: 4, width: 60 }} />}
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: tab === 'processing' ? '#3498db' : '#B0AEB8' }}>Đang chờ</Text>
+          {tab === 'processing' && <View style={{ height: 3, backgroundColor: '#3498db', borderRadius: 2, marginTop: 4, width: 60 }} />}
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setTab('history')} style={{ flex: 1, alignItems: 'center', paddingVertical: 10 }}>
-          <Text style={{ fontSize: 17, fontWeight: 'bold', color: tab === 'history' ? '#FB6D3A' : '#B0AEB8' }}>Lịch sử</Text>
-          {tab === 'history' && <View style={{ height: 3, backgroundColor: '#FB6D3A', borderRadius: 2, marginTop: 4, width: 60 }} />}
+          <Text style={{ fontSize: 17, fontWeight: 'bold', color: tab === 'history' ? '#3498db' : '#B0AEB8' }}>Lịch sử</Text>
+          {tab === 'history' && <View style={{ height: 3, backgroundColor: '#3498db', borderRadius: 2, marginTop: 4, width: 60 }} />}
         </TouchableOpacity>
       </View>
       {/* List */}
@@ -268,8 +268,8 @@ const PendingOrdersScreen = () => {
           data={pendingOrders}
           keyExtractor={item => item.id.toString()}
           renderItem={renderPendingItem}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchPendingOrders} colors={["#FB6D3A"]} />}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Không có đơn hàng</Text>}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchPendingOrders} colors={["#3498db"]} />}
+          ListEmptyComponent={() => <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Không có đơn hàng</Text>}
           showsVerticalScrollIndicator={false}
         />
       ) : (
@@ -277,7 +277,7 @@ const PendingOrdersScreen = () => {
           contentContainerStyle={{ padding: 16, paddingTop: 8, paddingBottom: 8 }}
           data={[...confirmedOrders, ...processingOrders, ...deliveringOrders, ...completedOrders, ...cancelledOrders]}
           keyExtractor={item => item.id.toString()}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchPendingOrders} colors={["#FB6D3A"]} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchPendingOrders} colors={["#3498db"]} />}
           renderItem={({ item }) => (
             <View style={{
               backgroundColor: '#fff',
@@ -324,7 +324,7 @@ const PendingOrdersScreen = () => {
               </View>
             </View>
           )}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Không có đơn hàng</Text>}
+          ListEmptyComponent={() => <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>Không có đơn hàng</Text>}
           showsVerticalScrollIndicator={false}
         />
       )}

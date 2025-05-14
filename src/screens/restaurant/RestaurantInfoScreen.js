@@ -42,7 +42,7 @@ const RestaurantInfoScreen = () => {
           <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
         <Text style={styles.title}>Thông tin nhà hàng</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('EditProfileScreen', { info })}>
+        <TouchableOpacity onPress={() => navigation.navigate('EditRestaurantScreen', { info })}>
           <Text style={styles.editText}>CHỈNH SỬA</Text>
         </TouchableOpacity>
       </View>

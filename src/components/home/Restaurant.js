@@ -32,73 +32,11 @@ export const Restaurant = () => {
         setRestaurants(shuffledRestaurants.slice(0, 5));
       } else {
         console.error('Failed to fetch restaurants:', response.message);
-        setRestaurants([
-          {
-            id: 1,
-            name: "Nhà hàng Hải Sản Fresh",
-            address: "123 Đường Láng, Đống Đa, Hà Nội",
-            image_url: "https://picsum.photos/700/300?random=1",
-          },
-          {
-            id: 2,
-            name: "Pizza Express",
-            address: "45 Phố Huế, Hai Bà Trưng, Hà Nội",
-            image_url: "https://picsum.photos/700/300?random=2",
-          },
-          {
-            id: 3,
-            name: "Bún Bò Huế Thanh",
-            address: "78 Phạm Ngọc Thạch, Đống Đa, Hà Nội",
-            image_url: "https://picsum.photos/700/300?random=3",
-          },
-          {
-            id: 4,
-            name: "Nhà hàng Chay Sen Tịnh",
-            address: "96 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
-            image_url: "https://picsum.photos/700/300?random=4",
-          },
-          {
-            id: 5,
-            name: "Quán Cơm Gia Đình",
-            address: "15 Lê Văn Lương, Cầu Giấy, Hà Nội",
-            image_url: "https://picsum.photos/700/300?random=5",
-          },
-        ]);
+        setRestaurants([]);
       }
     } catch (error) {
       console.error('Error fetching restaurants:', error);
-      setRestaurants([
-        {
-          id: 1,
-          name: "Nhà hàng Hải Sản Fresh",
-          address: "123 Đường Láng, Đống Đa, Hà Nội",
-          image_url: "https://picsum.photos/700/300?random=1",
-        },
-        {
-          id: 2,
-          name: "Pizza Express",
-          address: "45 Phố Huế, Hai Bà Trưng, Hà Nội",
-          image_url: "https://picsum.photos/700/300?random=2",
-        },
-        {
-          id: 3,
-          name: "Bún Bò Huế Thanh",
-          address: "78 Phạm Ngọc Thạch, Đống Đa, Hà Nội",
-          image_url: "https://picsum.photos/700/300?random=3",
-        },
-        {
-          id: 4,
-          name: "Nhà hàng Chay Sen Tịnh",
-          address: "96 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội",
-          image_url: "https://picsum.photos/700/300?random=4",
-        },
-        {
-          id: 5,
-          name: "Quán Cơm Gia Đình",
-          address: "15 Lê Văn Lương, Cầu Giấy, Hà Nội",
-          image_url: "https://picsum.photos/700/300?random=5",
-        },
-      ]);
+      setRestaurants([]);
     } finally {
       setLoading(false);
     }

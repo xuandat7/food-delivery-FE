@@ -1,33 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { restaurantAPI, categoryAPI, dishAPI, cartAPI } from '../../services';
 
 const iconBack = require('../../../assets/icon-back.png');
-const iconFilter = require('../../../assets/icon-filter.png');
 const foodImg = require('../../../assets/icon.png'); // Thay bằng ảnh món ăn nếu có
-const iconCancel = require('../../../assets/icon-cancel.png');
-const iconStar = require('../../../assets/icon_star.png');
-
-const offerOptions = [
-  'Delivery',
-  'Pick Up',
-  'Offer',
-  'Online payment available',
-];
-const deliverTimeOptions = ['10-15 min', '20 min', '30 min'];
-const pricingOptions = ['$', '$$', '$$$'];
-const ratingOptions = [1, 2, 3, 4, 5];
 
 const RestaurantViewScreen = ({ navigation }) => {
   const route = useRoute();
   const restaurantId = route.params?.id;
-
-  const [filterVisible, setFilterVisible] = useState(false);
-  const [selectedOffers, setSelectedOffers] = useState([]);
-  const [selectedTime, setSelectedTime] = useState('10-15 min');
-  const [selectedPricing, setSelectedPricing] = useState('$$');
-  const [selectedRating, setSelectedRating] = useState(4);
 
   // State để lưu dữ liệu từ API
   const [restaurant, setRestaurant] = useState(null);
@@ -191,14 +172,6 @@ const RestaurantViewScreen = ({ navigation }) => {
     fetchDishesByCategory(categoryId);
   };
 
-  const toggleOffer = (offer) => {
-    setSelectedOffers((prev) =>
-      prev.includes(offer)
-        ? prev.filter((o) => o !== offer)
-        : [...prev, offer]
-    );
-  };
-
   const onFoodPress = (food) => {
     navigation.navigate('FoodDetails', { id: food.id });
   };
@@ -259,9 +232,7 @@ const RestaurantViewScreen = ({ navigation }) => {
             <Image source={iconBack} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.title}>{restaurant?.name || 'Thông tin nhà hàng'}</Text>
-          <TouchableOpacity style={styles.moreBtn} onPress={() => setFilterVisible(true)}>
-            <Image source={iconFilter} style={styles.filterIcon} />
-          </TouchableOpacity>
+          <View style={{width: 45}} />
         </View>
         
         {/* Restaurant Image */}
@@ -359,86 +330,6 @@ const RestaurantViewScreen = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
-      
-      {/* Filter Modal */}
-      <Modal
-        visible={filterVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setFilterVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter your search</Text>
-              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setFilterVisible(false)}>
-                <Image source={iconCancel} style={styles.modalCloseIcon} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Offers */}
-              <Text style={styles.filterLabel}>OFFERS</Text>
-              <View style={styles.filterRowWrap}>
-                {offerOptions.map((offer) => (
-                  <TouchableOpacity
-                    key={offer}
-                    style={[styles.filterTag, selectedOffers.includes(offer) && styles.filterTagActive]}
-                    onPress={() => toggleOffer(offer)}
-                  >
-                    <Text style={[styles.filterTagText, selectedOffers.includes(offer) && styles.filterTagTextActive]}>{offer}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {/* Deliver Time */}
-              <Text style={styles.filterLabel}>DELIVER TIME</Text>
-              <View style={styles.filterRow}>
-                {deliverTimeOptions.map((time) => (
-                  <TouchableOpacity
-                    key={time}
-                    style={[styles.filterTag, selectedTime === time && styles.filterTagActive]}
-                    onPress={() => setSelectedTime(time)}
-                  >
-                    <Text style={[styles.filterTagText, selectedTime === time && styles.filterTagTextActive]}>{time}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {/* Pricing */}
-              <Text style={styles.filterLabel}>PRICING</Text>
-              <View style={styles.filterRow}>
-                {pricingOptions.map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[styles.filterCircle, selectedPricing === p && styles.filterCircleActive]}
-                    onPress={() => setSelectedPricing(p)}
-                  >
-                    <Text style={[styles.filterCircleText, selectedPricing === p && styles.filterCircleTextActive]}>{p}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {/* Rating */}
-              <Text style={styles.filterLabel}>RATING</Text>
-              <View style={styles.filterRow}>
-                {ratingOptions.map((r) => (
-                  <TouchableOpacity
-                    key={r}
-                    style={styles.ratingStarBtn}
-                    onPress={() => setSelectedRating(r)}
-                  >
-                    <Image
-                      source={iconStar}
-                      style={[styles.ratingStar, selectedRating >= r ? styles.ratingStarActive : styles.ratingStarInactive]}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {/* Filter Button */}
-              <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterVisible(false)}>
-                <Text style={styles.filterBtnText}>FILTER</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 };
@@ -493,19 +384,6 @@ const styles = StyleSheet.create({
     color: '#181c2e',
     fontFamily: 'Sen-Regular',
     fontWeight: '400',
-  },
-  moreBtn: {
-    backgroundColor: '#ecf0f4',
-    borderRadius: 22.5,
-    width: 45,
-    height: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain',
   },
   restaurantImgWrapper: {
     alignItems: 'center',
@@ -633,139 +511,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 24,
     textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(38, 62, 85, 0.67)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: 340,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 10,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    flex: 1,
-    fontSize: 20,
-    color: '#181c2e',
-    fontFamily: 'Sen-Bold',
-    fontWeight: '700',
-  },
-  modalCloseBtn: {
-    width: 36,
-    height: 36,
-    backgroundColor: '#ecf0f4',
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCloseIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: 'contain',
-  },
-  filterLabel: {
-    fontSize: 13,
-    color: '#181c2e',
-    fontFamily: 'Sen-Regular',
-    fontWeight: '700',
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  filterRowWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 12,
-  },
-  filterTag: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#e5e6eb',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  filterTagActive: {
-    backgroundColor: '#ff7621',
-    borderColor: '#ff7621',
-  },
-  filterTagText: {
-    fontSize: 13,
-    color: '#181c2e',
-    fontFamily: 'Sen-Regular',
-  },
-  filterTagTextActive: {
-    color: '#fff',
-  },
-  filterCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#e5e6eb',
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  filterCircleActive: {
-    backgroundColor: '#ff7621',
-    borderColor: '#ff7621',
-  },
-  filterCircleText: {
-    fontSize: 20,
-    color: '#181c2e',
-    fontFamily: 'Sen-Bold',
-  },
-  filterCircleTextActive: {
-    color: '#fff',
-  },
-  ratingStarBtn: {
-    marginRight: 8,
-  },
-  ratingStar: {
-    width: 32,
-    height: 32,
-    resizeMode: 'contain',
-  },
-  ratingStarActive: {
-    tintColor: '#ff7621',
-  },
-  ratingStarInactive: {
-    tintColor: '#e5e6eb',
-  },
-  filterBtn: {
-    backgroundColor: '#ff7621',
-    borderRadius: 16,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  filterBtnText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'Sen-Bold',
   },
   errorContainer: {
     flex: 1,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -13,7 +13,11 @@ import {
   Alert,
   Platform,
   Modal,
-  FlatList
+  FlatList,
+  Keyboard,
+  Dimensions,
+  UIManager,
+  findNodeHandle
 } from 'react-native';
 import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -36,6 +40,72 @@ const AddNewFoodScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  
+  // Keyboard states
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Input refs
+  const nameRef = useRef(null);
+  const priceRef = useRef(null);
+  const detailsRef = useRef(null);
+  const scrollViewRef = useRef(null);
+  
+  // Keyboard listeners to adjust scroll
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+  
+  // Handle focused input to ensure it's visible
+  const handleInputFocus = (fieldRef) => {
+    if (!fieldRef?.current) return;
+    
+    // Đảm bảo mã này chỉ chạy sau khi component đã render
+    setTimeout(() => {
+      const nodeHandle = findNodeHandle(fieldRef.current);
+      if (!nodeHandle) return;
+      
+      // Tính toán vị trí của ô nhập
+      UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
+        // Tính toán vị trí của đáy ô nhập
+        const inputBottom = pageY + height;
+        
+        // Tính toán vị trí đỉnh của bàn phím
+        const screenHeight = Dimensions.get('window').height;
+        const keyboardTop = screenHeight - keyboardHeight;
+        
+        // Thêm khoảng cách để dễ nhìn
+        const paddingForVisibility = 20;
+        
+        // Chỉ cuộn nếu ô nhập bị che bởi bàn phím
+        if (inputBottom + paddingForVisibility > keyboardTop) {
+          // Cuộn chính xác đến vị trí của ô nhập liệu
+          scrollViewRef.current?.scrollTo({ 
+            y: pageY - 100, // Cuộn ô nhập lên vị trí cách đỉnh màn hình 100px
+            animated: true 
+          });
+        }
+      });
+    }, 100);
+  };
   
   // Populate form with data when editing
   useEffect(() => {
@@ -305,76 +375,74 @@ const AddNewFoodScreen = () => {
         </TouchableOpacity>
       </View>
       
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Item Name */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>TÊN MÓN ĂN</Text>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        ref={scrollViewRef}
+        contentContainerStyle={{ 
+          paddingBottom: keyboardVisible ? 150 : 50 
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {/* Food Name Input */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Tên món ăn</Text>
           <TextInput 
-            style={styles.textInput}
+            style={styles.input}
+            placeholder="Ví dụ: Phở bò tái"
             value={itemName}
             onChangeText={setItemName}
-            placeholder="Nhập tên món ăn"
-            placeholderTextColor="#A0A0A0"
+            ref={nameRef}
+            returnKeyType="next"
+            onSubmitEditing={() => priceRef.current?.focus()}
+            onFocus={() => handleInputFocus(nameRef)}
           />
         </View>
         
-        {/* Category Selector */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DANH MỤC</Text>
-          {loadingCategories ? (
-            <ActivityIndicator size="small" color="#3498db" />
-          ) : (
-            <TouchableOpacity
-              style={styles.categorySelector}
-              onPress={() => {
-                if (categories.length > 0) {
-                  setCategoryModalVisible(true);
-                } else {
-                  Alert.alert('Thông báo', 'Không có danh mục nào. Vui lòng nhập thủ công.');
-                }
-              }}
-            >
-              <Text style={selectedCategory ? styles.selectedCategoryText : styles.placeholderText}>
-                {selectedCategory || 'Chọn danh mục'}
-              </Text>
-              <Feather name="chevron-down" size={20} color="#666" />
-            </TouchableOpacity>
-          )}
-          
-          {/* Category manual input when no categories */}
-          {categories.length === 0 && (
-            <TextInput 
-              style={[styles.textInput, { marginTop: 8 }]}
-              value={selectedCategory}
-              onChangeText={setSelectedCategory}
-              placeholder="Nhập tên danh mục mới"
-              placeholderTextColor="#A0A0A0"
-            />
-          )}
-          
-          {/* Category Selection Modal */}
-          <Modal
-            transparent={true}
-            visible={categoryModalVisible}
-            onRequestClose={() => setCategoryModalVisible(false)}
-            animationType="fade"
+        {/* Price Input */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Giá bán (VNĐ)</Text>
+          <TextInput 
+            style={styles.input}
+            placeholder="Ví dụ: 25000"
+            keyboardType="numeric"
+            value={price}
+            onChangeText={setPrice}
+            ref={priceRef}
+            returnKeyType="next"
+            onSubmitEditing={() => detailsRef.current?.focus()}
+            onFocus={() => handleInputFocus(priceRef)}
+          />
+        </View>
+        
+        {/* Category Selection */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Danh mục</Text>
+          <TouchableOpacity 
+            style={styles.dropdownToggle}
+            onPress={() => setCategoryModalVisible(true)}
           >
-            <TouchableOpacity 
-              style={styles.modalOverlay}
-              activeOpacity={1}
-              onPress={() => setCategoryModalVisible(false)}
-            >
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Chọn danh mục</Text>
-                <FlatList
-                  data={categories}
-                  renderItem={renderCategoryItem}
-                  keyExtractor={(item, index) => index.toString()}
-                  style={styles.categoriesList}
-                />
-              </View>
-            </TouchableOpacity>
-          </Modal>
+            <Text style={styles.selectedValue}>
+              {selectedCategory || 'Chọn danh mục...'}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color="#666" />
+          </TouchableOpacity>
+        </View>
+        
+        {/* Food Details Input */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>Mô tả chi tiết</Text>
+          <TextInput 
+            style={[styles.input, styles.multilineInput]}
+            placeholder="Mô tả chi tiết về món ăn..."
+            multiline={true}
+            numberOfLines={4}
+            value={details}
+            onChangeText={setDetails}
+            ref={detailsRef}
+            onFocus={() => handleInputFocus(detailsRef)}
+          />
         </View>
         
         {/* Upload Photo/Video */}
@@ -404,36 +472,6 @@ const AddNewFoodScreen = () => {
           </View>
         </View>
         
-        {/* Price */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>GIÁ</Text>
-          <View style={styles.priceSection}>
-            <TextInput 
-              style={styles.priceInput}
-              value={price}
-              onChangeText={setPrice}
-              placeholder="0"
-              keyboardType="numeric"
-              placeholderTextColor="#A0A0A0"
-            />
-            <Text style={styles.currencyText}>VNĐ</Text>
-          </View>
-        </View>
-        
-        {/* Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>MÔ TẢ</Text>
-          <TextInput 
-            style={styles.detailsInput}
-            value={details}
-            onChangeText={setDetails}
-            placeholder="Nhập mô tả món ăn"
-            placeholderTextColor="#A0A0A0"
-            multiline
-            textAlignVertical="top"
-          />
-        </View>
-        
         {/* Save Button */}
         <TouchableOpacity 
           style={[styles.saveButton, loading && styles.disabledButton]}
@@ -452,6 +490,30 @@ const AddNewFoodScreen = () => {
         {/* Extra space to ensure all content is visible */}
         <View style={{ height: 30 }} />
       </ScrollView>
+      
+      {/* Category Selection Modal */}
+      <Modal
+        transparent={true}
+        visible={categoryModalVisible}
+        onRequestClose={() => setCategoryModalVisible(false)}
+        animationType="fade"
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setCategoryModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chọn danh mục</Text>
+            <FlatList
+              data={categories}
+              renderItem={renderCategoryItem}
+              keyExtractor={(item, index) => index.toString()}
+              style={styles.categoriesList}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -493,20 +555,20 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#3498db',
   },
-  content: {
+  scrollView: {
     flex: 1,
     paddingHorizontal: 24,
   },
-  section: {
+  inputContainer: {
     marginVertical: 16,
   },
-  sectionTitle: {
+  inputLabel: {
     fontSize: 13,
     fontWeight: '500',
     color: '#333',
     marginBottom: 8,
   },
-  textInput: {
+  input: {
     height: 50,
     borderWidth: 1,
     borderColor: '#E0E0E0',
@@ -515,7 +577,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
-  categorySelector: {
+  dropdownToggle: {
     height: 50,
     borderWidth: 1,
     borderColor: '#E0E0E0',
@@ -524,6 +586,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  selectedValue: {
+    fontSize: 16,
+    color: '#333',
   },
   selectedCategoryText: {
     fontSize: 16,
@@ -611,34 +677,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B63F6',
   },
-  priceSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priceInput: {
-    width: '50%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#333',
-  },
-  currencyText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  detailsInput: {
+  multilineInput: {
     height: 120,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
-    color: '#333',
   },
   saveButton: {
     height: 62,

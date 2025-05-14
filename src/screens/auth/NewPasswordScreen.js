@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,10 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Dimensions
+  Dimensions,
+  Keyboard,
+  UIManager,
+  findNodeHandle
 } from 'react-native';
 import { COLORS, RESTAURANT_COLORS, SIZES } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,9 +36,39 @@ const NewPasswordScreen = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // Input refs
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
+  const scrollViewRef = useRef(null);
   
   // Use the appropriate theme based on isRestaurant prop
   const theme = isRestaurant ? RESTAURANT_COLORS : COLORS;
+
+  // Keyboard listeners to adjust scroll
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidShow' : 'keyboardWillShow',
+      (e) => {
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'android' ? 'keyboardDidHide' : 'keyboardWillHide',
+      () => {
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -134,6 +167,39 @@ const NewPasswordScreen = () => {
     }
   };
 
+  // Handle focused input to ensure it's visible
+  const handleInputFocus = (fieldRef) => {
+    if (!fieldRef?.current) return;
+    
+    // Đảm bảo mã này chỉ chạy sau khi component đã render
+    setTimeout(() => {
+      const nodeHandle = findNodeHandle(fieldRef.current);
+      if (!nodeHandle) return;
+      
+      // Tính toán vị trí của ô nhập
+      UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
+        // Tính toán vị trí của đáy ô nhập
+        const inputBottom = pageY + height;
+        
+        // Tính toán vị trí đỉnh của bàn phím
+        const screenHeight = Dimensions.get('window').height;
+        const keyboardTop = screenHeight - keyboardHeight;
+        
+        // Thêm khoảng cách để dễ nhìn
+        const paddingForVisibility = 20;
+        
+        // Chỉ cuộn nếu ô nhập bị che bởi bàn phím
+        if (inputBottom + paddingForVisibility > keyboardTop) {
+          // Cuộn chính xác đến vị trí của ô nhập liệu
+          scrollViewRef.current?.scrollTo({ 
+            y: pageY - 100, // Cuộn ô nhập lên vị trí cách đỉnh màn hình 100px
+            animated: true 
+          });
+        }
+      });
+    }, 100);
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {/* Background color extends full screen */}
@@ -150,7 +216,8 @@ const NewPasswordScreen = () => {
         <KeyboardAvoidingView 
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+          enabled={Platform.OS === 'ios'}
         >
           {/* Content container */}
           <View style={{ flex: 1 }}>
@@ -166,7 +233,7 @@ const NewPasswordScreen = () => {
             </TouchableOpacity>
             
             {/* Top section */}
-            <View style={styles.topSection}>
+            <View style={[styles.topSection, keyboardVisible && styles.topSectionSmaller]}>
               <Text style={[styles.title, { color: theme.background }]}>
                 {isRestaurant ? 'Đặt Lại Mật Khẩu Nhà Hàng' : 'Đặt Lại Mật Khẩu'}
               </Text>
@@ -184,9 +251,11 @@ const NewPasswordScreen = () => {
             ]}>
               <ScrollView 
                 style={{ flex: 1 }}
-                contentContainerStyle={{ paddingBottom: 80 }}
+                contentContainerStyle={{ paddingBottom: keyboardVisible ? 200 : 120 }}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
+                ref={scrollViewRef}
               >
                 {/* Password section */}
                 <View style={styles.inputGroup}>
@@ -202,6 +271,12 @@ const NewPasswordScreen = () => {
                       secureTextEntry={!showPassword}
                       value={password}
                       onChangeText={validatePassword}
+                      autoCapitalize="none"
+                      textContentType="newPassword"
+                      returnKeyType="next"
+                      ref={passwordRef}
+                      onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                      onFocus={() => handleInputFocus(passwordRef)}
                     />
                     <TouchableOpacity
                       style={styles.eyeIcon}
@@ -267,6 +342,12 @@ const NewPasswordScreen = () => {
                       secureTextEntry={!showConfirmPassword}
                       value={confirmPassword}
                       onChangeText={validateConfirmPassword}
+                      autoCapitalize="none"
+                      textContentType="newPassword"
+                      returnKeyType="done"
+                      onSubmitEditing={handleResetPassword}
+                      ref={confirmPasswordRef}
+                      onFocus={() => handleInputFocus(confirmPasswordRef)}
                     />
                     <TouchableOpacity
                       style={styles.eyeIcon}
@@ -345,6 +426,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1,
   },
+  topSectionSmaller: {
+    marginTop: 80,
+    marginBottom: 15,
+  },
   title: {
     fontSize: 30,
     fontWeight: '700',
@@ -380,26 +465,27 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: SIZES.buttonRadius,
+    height: SIZES.inputHeight,
+    justifyContent: 'center',
     position: 'relative',
   },
   input: {
     flex: 1,
-    height: SIZES.inputHeight,
-    borderRadius: SIZES.inputRadius,
-    borderWidth: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     fontSize: SIZES.medium,
+    height: '100%',
   },
   eyeIcon: {
     position: 'absolute',
-    right: 12,
-    height: '100%',
-    justifyContent: 'center',
+    right: 19,
+    top: 19,
   },
   errorText: {
     marginTop: 5,
     fontSize: SIZES.small,
+    color: 'red',
   },
   passwordRequirements: {
     fontSize: 12,
@@ -431,6 +517,12 @@ const styles = StyleSheet.create({
   loginButtonText: {
     fontSize: SIZES.medium,
     fontWeight: '700',
+  },
+  bullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginRight: 8,
   },
 });
 

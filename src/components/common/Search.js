@@ -1,42 +1,71 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { restaurantAPI } from '../../services';
+import { Ionicons } from '@expo/vector-icons';
 
-// Dummy images/icons, replace with your assets or pass as props
 const dummyIcon = require('../../../assets/icon.png');
 const dummySearch = require('../../../assets/icon-search.png');
 const dummyBack = require('../../../assets/icon-back.png');
 const dummyCancel = require('../../../assets/icon-cancel.png');
-const dummyStar = require('../../../assets/icon_star.png');
 const dummyFood = require('../../../assets/icon.png');
 
 const Search = ({
-  recentKeywords = ['Burger', 'Sandwich', 'Pizza', 'Sanwich'],
-  suggestedRestaurants = [
-    { name: 'Pansi Restaurant', rating: 4.7 },
-    { name: 'American Spicy Burger Shop', rating: 4.3 },
-    { name: 'Cafenio Coffee Club', rating: 4.0 },
-  ],
-  popularFastFood = [
-    { name: 'European Pizza', place: 'Uttora Coffe House' },
-    { name: 'Buffalo Pizza.', place: 'Cafenio Coffee Club' },
-    { name: 'Chicken Burger', place: 'Burger House' },
-    { name: 'Spicy Sandwich', place: 'Sandwich Bar' },
-    { name: 'Veggie Pizza', place: 'Green Eatery' },
-    { name: 'BBQ Burger', place: 'BBQ Corner' },
-    { name: 'Cheese Pizza', place: 'Pizza Mania' },
-    { name: 'Fish Burger', place: 'Seafood Deli' },
-    { name: 'Classic Pizza', place: 'Classic House' },
-    { name: 'Double Burger', place: 'Burger King' },
-  ],
-  cartCount = 2,
   onBack,
-  onKeywordPress,
   onRestaurantPress,
-  onFoodPress,
 }) => {
   const [searchText, setSearchText] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
   const navigation = useNavigation();
+
+  // Lấy danh sách nhà hàng nổi bật khi component được mount
+  useEffect(() => {
+    const fetchFeaturedRestaurants = async () => {
+      try {
+        setLoadingFeatured(true);
+        const response = await restaurantAPI.getAllRestaurants(0, 5);
+        if (response.success && response.data?.content) {
+          setFeaturedRestaurants(response.data.content);
+        } else {
+          setFeaturedRestaurants([]);
+        }
+      } catch (error) {
+        console.error('Error fetching featured restaurants:', error);
+        setFeaturedRestaurants([]);
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+
+    fetchFeaturedRestaurants();
+  }, []);
+
+  // Xử lý sự kiện tìm kiếm khi nhấn nút tìm kiếm trên bàn phím
+  const handleSearch = async () => {
+    if (!searchText.trim()) return;
+    
+    Keyboard.dismiss(); // Ẩn bàn phím
+    setIsSearching(true);
+    setLoading(true);
+    
+    try {
+      const response = await restaurantAPI.searchRestaurants(searchText.trim());
+      if (response.success) {
+        setSearchResults(response.data.content);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 24}}>
@@ -45,78 +74,106 @@ const Search = ({
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
           <Image source={dummyBack} style={styles.backIcon} />
         </TouchableOpacity>
-        <Text style={styles.title}>Search</Text>
-        <View style={styles.cartWrapper}>
-          <View style={styles.cartIconBg}>
-            <Image source={dummyIcon} style={styles.cartIcon} />
-          </View>
-          <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>{cartCount}</Text></View>
-        </View>
+        <Text style={styles.title}>Khám phá món ăn và nhà hàng</Text>
       </View>
+      
       {/* Search Bar */}
       <View style={styles.searchBarWrapper}>
         <Image source={dummySearch} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Pizza"
+          placeholder="Tìm kiếm"
           placeholderTextColor="#979797"
           value={searchText}
           onChangeText={setSearchText}
+          returnKeyType="search"
+          onSubmitEditing={handleSearch}
         />
-        <TouchableOpacity style={styles.clearBtn} onPress={() => setSearchText('')}>
-          <Image source={dummyCancel} style={styles.clearIcon} />
-        </TouchableOpacity>
-      </View>
-      {/* Recent Keywords */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Keywords</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.keywordsRow}>
-          {recentKeywords.map((kw, idx) => (
-            <TouchableOpacity 
-              key={kw+idx} 
-              style={styles.keywordBtn} 
-              onPress={() => {
-                if (onKeywordPress) {
-                  onKeywordPress(kw);
-                } else if (navigation) {
-                  navigation.navigate('FoodSearch', { keyword: kw });
-                }
-              }}
-            >
-              <Text style={styles.keywordText}>{kw}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-      {/* Suggested Restaurants */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Suggested Restaurants</Text>
-        {suggestedRestaurants.map((r, idx) => (
-          <TouchableOpacity key={r.name+idx} style={styles.restaurantRow} onPress={() => onRestaurantPress?.(r)}>
-            <Image source={dummyFood} style={styles.restaurantImg} />
-            <View style={{flex:1}}>
-              <Text style={styles.restaurantName}>{r.name}</Text>
-              <View style={styles.ratingRow}>
-                <Image source={dummyStar} style={styles.starIcon} />
-                <Text style={styles.ratingText}>{r.rating}</Text>
-              </View>
-            </View>
+        {searchText ? (
+          <TouchableOpacity style={styles.clearBtn} onPress={() => {
+            setSearchText('');
+            setIsSearching(false);
+          }}>
+            <Image source={dummyCancel} style={styles.clearIcon} />
           </TouchableOpacity>
-        ))}
+        ) : null}
       </View>
-      {/* Popular Fast Food */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Popular Fast Food</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fastFoodRow}>
-          {popularFastFood.map((f, idx) => (
-            <TouchableOpacity key={f.name+idx} style={styles.fastFoodCard} onPress={() => onFoodPress?.(f)}>
-              <Image source={dummyFood} style={styles.fastFoodImg} />
-              <Text style={styles.fastFoodName}>{f.name}</Text>
-              <Text style={styles.fastFoodPlace}>{f.place}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+
+      {/* Hiển thị kết quả tìm kiếm nếu đang tìm kiếm */}
+      {isSearching ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Kết quả tìm kiếm</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FB6D3A" style={styles.loader} />
+          ) : searchResults.length > 0 ? (
+            searchResults.map((restaurant, idx) => (
+              <TouchableOpacity 
+                key={restaurant.id || idx} 
+                style={styles.restaurantRow} 
+                onPress={() => restaurant.id ? onRestaurantPress?.(restaurant) : null}
+              >
+                <Image 
+                  source={{ uri: restaurant.image_url}} 
+                  style={styles.restaurantImg} 
+                  defaultSource={dummyFood}
+                />
+                <View style={{flex: 1}}>
+                  <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                  {restaurant.type && (
+                    <Text style={styles.restaurantType}>{restaurant.type}</Text>
+                  )}
+                  {restaurant.address && (
+                    <View style={styles.locationContainer}>
+                      <Ionicons name="location" size={14} color="#888" />
+                      <Text style={styles.locationText}>{restaurant.address}</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.noResultsText}>Không tìm thấy kết quả nào cho "{searchText}"</Text>
+          )}
+        </View>
+      ) : (
+        <>
+          {/* Suggested Restaurants */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Nhà hàng nổi bật</Text>
+            {loadingFeatured ? (
+              <ActivityIndicator size="small" color="#FB6D3A" style={styles.loader} />
+            ) : featuredRestaurants.length > 0 ? (
+              featuredRestaurants.map((restaurant, idx) => (
+                <TouchableOpacity 
+                  key={restaurant.id || idx} 
+                  style={styles.restaurantRow} 
+                  onPress={() => restaurant.id ? onRestaurantPress?.(restaurant) : null}
+                >
+                  <Image 
+                    source={{ uri: restaurant.image_url || 'https://via.placeholder.com/150' }} 
+                    style={styles.restaurantImg} 
+                    defaultSource={dummyFood}
+                  />
+                  <View style={{flex:1}}>
+                    <Text style={styles.restaurantName}>{restaurant.name}</Text>
+                    {restaurant.address && (
+                      <View style={styles.locationContainer}>
+                        <Ionicons name="location" size={14} color="#888" />
+                        <Text style={styles.locationText}>{restaurant.address}</Text>
+                      </View>
+                    )}
+                    {restaurant.type && (
+                      <Text style={styles.restaurantType}>{restaurant.type}</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.noResultsText}>Không thể tải nhà hàng</Text>
+            )}
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 };
@@ -126,7 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 24,
-    paddingTop: 50,
+    paddingTop: 11,
   },
   topBar: {
     flexDirection: 'row',
@@ -154,55 +211,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Sen-Regular',
     fontWeight: '400',
   },
-  cartWrapper: {
-    width: 45,
-    height: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  cartIconBg: {
-    backgroundColor: '#181c2e',
-    borderRadius: 22.5,
-    width: 45,
-    height: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-  },
-  cartBadge: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    backgroundColor: '#ff7621',
-    borderRadius: 12.5,
-    width: 25,
-    height: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Sen-Bold',
-  },
   searchBarWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f5f6fa',
-    borderRadius: 16,
-    height: 62,
+    borderRadius: 12,
+    height: 48,
     marginBottom: 16,
     paddingHorizontal: 16,
   },
   searchIcon: {
-    width: 17,
-    height: 17,
+    width: 16,
+    height: 16,
     marginRight: 8,
     resizeMode: 'contain',
   },
@@ -211,6 +231,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#181c2e',
     fontFamily: 'Sen-Regular',
+    height: 40,
   },
   clearBtn: {
     width: 20,
@@ -234,21 +255,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Sen-Regular',
     marginBottom: 8,
   },
-  keywordsRow: {
-    flexDirection: 'row',
-  },
-  keywordBtn: {
-    backgroundColor: '#f5f6fa',
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginRight: 8,
-  },
-  keywordText: {
-    fontSize: 16,
-    color: '#181c2e',
-    fontFamily: 'Sen-Regular',
-  },
   restaurantRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,8 +268,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   restaurantImg: {
-    width: 50,
-    height: 50,
+    width: 120,
+    height: 120,
     borderRadius: 8,
     marginRight: 12,
     backgroundColor: '#eee',
@@ -274,53 +280,31 @@ const styles = StyleSheet.create({
     fontFamily: 'Sen-Regular',
     fontWeight: '400',
   },
-  ratingRow: {
+  locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
   },
-  starIcon: {
-    width: 15,
-    height: 15,
-    marginRight: 4,
-    resizeMode: 'contain',
+  locationText: {
+    fontSize: 14,
+    color: '#888',
+    marginLeft: 4,
   },
-  ratingText: {
+  restaurantType: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  loader: {
+    marginVertical: 20,
+    alignSelf: 'center',
+  },
+  noResultsText: {
+    textAlign: 'center',
+    color: '#888',
+    marginTop: 20,
     fontSize: 16,
-    color: '#181c2e',
-    fontFamily: 'Sen-Regular',
-  },
-  fastFoodRow: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  fastFoodCard: {
-    width: 150,
-    backgroundColor: '#f5f6fa',
-    borderRadius: 16,
-    alignItems: 'center',
-    padding: 12,
-    marginRight: 12,
-  },
-  fastFoodImg: {
-    width: 100,
-    height: 84,
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: '#eee',
-  },
-  fastFoodName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#31343d',
-    fontFamily: 'Sen-Bold',
-    marginBottom: 2,
-  },
-  fastFoodPlace: {
-    fontSize: 13,
-    color: '#646982',
-    fontFamily: 'Sen-Regular',
   },
 });
 
-export default Search; 
+export default Search;

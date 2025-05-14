@@ -20,12 +20,11 @@ import HomeScreen from '../screens/home/HomeScreen';
 import PersonalInfoScreen from '../screens/info/PersonalInfoScreen';
 import EditProfileScreen from '../screens/info/EditProfileScreen';
 import MenuScreen from '../screens/home/MenuScreen';
-import MyOrdersScreen from '../screens/info/MyOrdersScreen';
+import MyOrdersScreen from '../screens/order/MyOrdersScreen.js';
 
 // Import screens from nhánh Linh
 import SearchScreen from '../screens/home/SearchScreen';
 import RestaurantViewScreen from '../screens/home/RestaurantViewScreen';
-import FilterScreen from '../screens/home/FilterScreen';
 import FoodSearchScreen from '../screens/home/FoodSearchScreen';
 import FoodDetailsScreen from '../screens/food/FoodDetailsScreen';
 
@@ -145,7 +144,6 @@ const AppNavigator = () => {
         <Stack.Screen name="RestaurantView" component={RestaurantViewScreen} />
         <Stack.Screen name="FoodSearch" component={FoodSearchScreen} />
         <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
-        <Stack.Screen name="Filter" component={FilterScreen} />
         <Stack.Screen name="TypeRestaurants" component={TypeRestaurantsScreen} />
         
         {/* Category screens */}

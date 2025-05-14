@@ -7,16 +7,12 @@ import { AllType } from "../../components/home/AllType";
 import { Search } from "../../components/home/Search";
 import { Restaurant } from "../../components/home/Restaurant";
 import { userAPI, cartAPI, AsyncStorage } from '../../services';
-import { Top } from "../../components/home/Top";
-import { HeyHalalGood } from "../../components/home/HeyHalalGood";
-import { RestaurantWrapper } from "../../components/home/RestaurantWrapper";
-import { FontAwesome, Entypo } from '@expo/vector-icons';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState(""); // State để lưu tên người dùng
-  const [greeting, setGreeting] = useState(""); // State để lưu lời chào theo thời gian
+  const [userName, setUserName] = useState(""); 
+  const [greeting, setGreeting] = useState(""); 
   const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
@@ -39,11 +35,11 @@ const HomeScreen = () => {
           // Xác định lời chào dựa vào thời gian
           const hour = new Date().getHours();
           if (hour < 12) {
-            setGreeting("buổi sáng");
+            setGreeting("Chào buổi sáng");
           } else if (hour < 18) {
-            setGreeting("buổi chiều");
+            setGreeting("Chào buổi chiều");
           } else {
-            setGreeting("buổi tối");
+            setGreeting("Chào buổi tối");
           }
           
           // Token is valid, continue to Home
@@ -173,7 +169,7 @@ const HomeScreen = () => {
 
         {/* Greeting */}
         <View className="px-4 mt-4 mb-3">
-          <Text className="text-xl font-medium">Xin chào <Text className="font-bold">{userName}</Text>, {greeting}!</Text>
+          <Text className="text-xl font-medium"><Text className="font-bold">{userName}</Text>, {greeting}!</Text>
         </View>
 
         <View className="px-4">

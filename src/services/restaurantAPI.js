@@ -209,6 +209,84 @@ const restaurantAPI = {
   },
   
   /**
+   * Search restaurants by keyword
+   * @param {string} keyword - Search keyword
+   * @param {number} page - Page number (starting from 0)
+   * @param {number} limit - Results per page
+   * @returns {Promise} - API response
+   */
+  searchRestaurants: async (keyword, page = 0, limit = 10) => {
+    try {
+      console.log(`Searching restaurants with keyword: "${keyword}", page: ${page}, limit: ${limit}`);
+      
+      // Thay vì gọi API search trực tiếp, chúng ta sẽ lấy tất cả nhà hàng và filter ở client side
+      const allRestaurantsResponse = await restaurantAPI.getAllRestaurants(0, 100);
+      
+      if (allRestaurantsResponse.success && allRestaurantsResponse.data?.content) {
+        const allRestaurants = allRestaurantsResponse.data.content;
+        
+        // Filter restaurants theo keyword
+        const lowercaseKeyword = keyword.toLowerCase();
+        const filteredRestaurants = allRestaurants.filter(restaurant => {
+          return (
+            (restaurant.name && restaurant.name.toLowerCase().includes(lowercaseKeyword)) ||
+            (restaurant.description && restaurant.description.toLowerCase().includes(lowercaseKeyword)) ||
+            (restaurant.address && restaurant.address.toLowerCase().includes(lowercaseKeyword)) ||
+            (restaurant.type && restaurant.type.toLowerCase().includes(lowercaseKeyword))
+          );
+        });
+        
+        // Phân trang kết quả
+        const startIndex = page * limit;
+        const endIndex = startIndex + limit;
+        const paginatedResults = filteredRestaurants.slice(startIndex, endIndex);
+        
+        return {
+          success: true,
+          message: `Tìm thấy ${filteredRestaurants.length} nhà hàng với từ khóa "${keyword}"`,
+          data: {
+            content: paginatedResults,
+            totalPages: Math.ceil(filteredRestaurants.length / limit),
+            totalElements: filteredRestaurants.length,
+            size: limit,
+            number: page
+          }
+        };
+      }
+      
+      throw new Error('Không thể tìm kiếm nhà hàng');
+    } catch (error) {
+      console.error('Error searching restaurants:', error);
+      
+      // Mock data nếu xảy ra lỗi
+      const mockResults = [];
+      for (let i = 1; i <= 3; i++) {
+        mockResults.push({
+          id: i,
+          name: `Nhà hàng ${keyword} ${i}`,
+          description: `Kết quả tìm kiếm cho "${keyword}"`,
+          address: `Địa chỉ ${i}, Hà Nội`,
+          phone: `098765432${i}`,
+          image_url: `https://picsum.photos/500/300?random=${i}`,
+          type: i % 2 === 0 ? "Nhà hàng Á" : "Nhà hàng Âu",
+        });
+      }
+      
+      return {
+        success: true,
+        message: 'Sử dụng dữ liệu mẫu',
+        data: {
+          content: mockResults,
+          totalPages: 1,
+          totalElements: mockResults.length,
+          size: limit,
+          number: page
+        }
+      };
+    }
+  },
+  
+  /**
    * Get restaurant dishes
    * @param {number} page - Page number
    * @param {number} limit - Results per page

@@ -39,10 +39,10 @@ const restaurantAPI = {
         
         clearTimeout(timeoutId);
         
-        console.log('Restaurant profile response status:', response.status);
+        //console.log('Restaurant profile response status:', response.status);
         
         const data = await response.json();
-        console.log('Restaurant profile response data:', data);
+        //console.log('Restaurant profile response data:', data);
         
         if (!response.ok) {
           console.error('Restaurant profile request failed:', data);
@@ -60,7 +60,7 @@ const restaurantAPI = {
         const cachedData = await AsyncStorage.getItem('restaurantProfile');
         if (cachedData) {
           const parsedData = JSON.parse(cachedData);
-          console.log('Using cached restaurant profile data');
+          //console.log('Using cached restaurant profile data');
           return { 
             success: true, 
             message: 'Using cached restaurant profile', 
@@ -99,7 +99,7 @@ const restaurantAPI = {
    */
   getAllRestaurants: async (page = 0, limit = 10) => {
     try {
-      console.log(`Fetching restaurants, page: ${page}, limit: ${limit}`);
+      //console.log(`Fetching restaurants, page: ${page}, limit: ${limit}`);
       
       const response = await fetch(`${BASE_URL}/restaurants?page=${page}&limit=${limit}`, {
         method: 'GET',
@@ -107,7 +107,7 @@ const restaurantAPI = {
       });
       
       const data = await response.json();
-      console.log('Restaurants API response:', response.status);
+      //console.log('Restaurants API response:', response.status);
       
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch restaurants');
@@ -160,7 +160,7 @@ const restaurantAPI = {
    */
   getRestaurantsByType: async (type, page = 0, limit = 10) => {
     try {
-      console.log(`Fetching restaurants by type: ${type}, page: ${page}, limit: ${limit}`);
+      //console.log(`Fetching restaurants by type: ${type}, page: ${page}, limit: ${limit}`);
       
       const response = await fetch(`${BASE_URL}/restaurants/by-type?type=${encodeURIComponent(type)}&page=${page}&limit=${limit}`, {
         method: 'GET',
@@ -168,7 +168,7 @@ const restaurantAPI = {
       });
       
       const data = await response.json();
-      console.log('Restaurants by type API response:', response.status);
+      //console.log('Restaurants by type API response:', response.status);
       
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch restaurants by type');
@@ -217,7 +217,7 @@ const restaurantAPI = {
    */
   searchRestaurants: async (keyword, page = 0, limit = 10) => {
     try {
-      console.log(`Searching restaurants with keyword: "${keyword}", page: ${page}, limit: ${limit}`);
+      //console.log(`Searching restaurants with keyword: "${keyword}", page: ${page}, limit: ${limit}`);
       
       // Thay vì gọi API search trực tiếp, chúng ta sẽ lấy tất cả nhà hàng và filter ở client side
       const allRestaurantsResponse = await restaurantAPI.getAllRestaurants(0, 100);
@@ -339,7 +339,7 @@ const restaurantAPI = {
         const cachedData = await AsyncStorage.getItem('restaurantDishes');
         if (cachedData) {
           const parsedData = JSON.parse(cachedData);
-          console.log('Using cached dishes data');
+         // console.log('Using cached dishes data');
           return { 
             success: true, 
             message: 'Using cached dishes', 

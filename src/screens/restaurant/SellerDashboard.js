@@ -4,23 +4,19 @@ import {
   Text,
   SafeAreaView,
   ScrollView,
-  Image,
   TouchableOpacity,
   StatusBar,
   Alert
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
-import COLORS from '../../constants/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import RunningOrdersScreen from './RunningOrdersScreen';
 import { AsyncStorage, restaurantAPI } from '../../services';
 import statisticsAPI from '../../services/statisticsAPI';
 
-// Custom Chart Component (simplified for this implementation)
+// Biểu đồ doanh thu
 const RevenueChart = ({ data }) => {
   const maxRevenue = Math.max(...(data?.map(i => i.revenue) || [1]), 1);
   return (
@@ -58,7 +54,6 @@ const SellerDashboard = () => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [showRunningOrders, setShowRunningOrders] = useState(false);
-  const [showOrderRequests, setShowOrderRequests] = useState(false);
   const [restaurantInfo, setRestaurantInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
@@ -89,13 +84,6 @@ const SellerDashboard = () => {
     if (isFocused) fetchData();
   }, [isFocused, timeFilter]);
 
-  const handleToggleRunningOrders = () => {
-    setShowRunningOrders(!showRunningOrders);
-  };
-
-  const handleToggleOrderRequests = () => {
-    // navigation.navigate('PendingOrdersScreen');
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -138,14 +126,14 @@ const SellerDashboard = () => {
           <View style={styles.statsContainer}>
             <TouchableOpacity
               style={styles.statsCard}
-              onPress={handleToggleRunningOrders}
+              
             >
               <Text style={styles.statsNumber}>{dashboard.runningOrders}</Text>
               <Text style={styles.statsLabel}>Đơn hàng</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.statsCard}
-              onPress={handleToggleOrderRequests}
+              
             >
               <Text style={styles.statsNumber}>{dashboard.orderRequests}</Text>
               <Text style={styles.statsLabel}>Đơn hàng mới</Text>
@@ -176,9 +164,7 @@ const SellerDashboard = () => {
         </ScrollView>
       ) : null}
       {/* Display running orders modal if needed */}
-      {showRunningOrders && (
-        <RunningOrdersScreen onClose={handleToggleRunningOrders} />
-      )}
+      
     </SafeAreaView>
   );
 };

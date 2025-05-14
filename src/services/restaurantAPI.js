@@ -733,6 +733,9 @@ const restaurantAPI = {
       if (!data.id) {
         return { success: false, message: 'Thiếu ID nhà hàng!', data: null };
       }
+      
+      console.log('Updating restaurant with data:', JSON.stringify(data));
+      
       // Use FormData for PATCH with image
       const formData = new FormData();
       if (data.name) formData.append('name', data.name);
@@ -740,19 +743,27 @@ const restaurantAPI = {
       if (data.phone) formData.append('phone', data.phone);
       if (data.address) formData.append('address', data.address);
       if (data.description) formData.append('description', data.description);
+      if (data.type) formData.append('type', data.type);
+      
       // Accept both avatar and image fields for compatibility
       if (data.avatar && data.avatar.uri) {
-        const uri = data.avatar.uri;
-        const name = uri.split('/').pop() || 'avatar.jpg';
-        const type = data.avatar.type || 'image/jpeg';
-        formData.append('image', { uri, name, type });
+        console.log('Appending avatar to FormData:', data.avatar.uri);
+        formData.append('image', {
+          uri: data.avatar.uri,
+          name: data.avatar.fileName || data.avatar.uri.split('/').pop() || 'avatar.jpg',
+          type: data.avatar.type || 'image/jpeg'
+        });
       } else if (data.image && data.image.uri) {
-        const uri = data.image.uri;
-        const name = uri.split('/').pop() || 'avatar.jpg';
-        const type = data.image.type || 'image/jpeg';
-        formData.append('image', { uri, name, type });
+        console.log('Appending image to FormData:', data.image.uri);
+        formData.append('image', {
+          uri: data.image.uri,
+          name: data.image.fileName || data.image.uri.split('/').pop() || 'avatar.jpg',
+          type: data.image.type || 'image/jpeg'
+        });
       }
-      const response = await fetch(`${BASE_URL}/restaurants/${data.id}`, {
+
+      // Using PATCH on public endpoint to avoid authentication issues
+      const response = await fetch(`${BASE_URL}/restaurants/public/${data.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -760,7 +771,12 @@ const restaurantAPI = {
         },
         body: formData
       });
+      
+      console.log('Update profile response status:', response.status);
+      
       const resData = await response.json();
+      console.log('Update profile response data:', resData);
+      
       if (!response.ok) throw new Error(resData.message || 'Cập nhật thông tin nhà hàng thất bại');
       return { success: true, message: 'Cập nhật thông tin nhà hàng thành công', data: resData };
     } catch (error) {

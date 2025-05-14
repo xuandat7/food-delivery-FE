@@ -211,6 +211,12 @@ const dishAPI = {
       if (dishData.description) formData.append('description', dishData.description);
       if (dishData.category) formData.append('category', dishData.category);
       
+      // Thêm restaurantId vào FormData - sử dụng đúng tên trường mà backend mong đợi
+      if (dishData.restaurantId) {
+        formData.append('restaurantId', dishData.restaurantId.toString());
+        console.log('Adding restaurantId to FormData:', dishData.restaurantId);
+      }
+      
       // Add image if exists
       if (dishData.image) {
         const imageUri = dishData.image.uri;
@@ -263,6 +269,12 @@ const dishAPI = {
       if (dishData.price) formData.append('price', dishData.price.toString());
       if (dishData.description !== undefined) formData.append('description', dishData.description);
       if (dishData.category) formData.append('category', dishData.category);
+      
+      // Thêm restaurantId vào FormData - sử dụng đúng tên trường mà backend mong đợi
+      if (dishData.restaurantId) {
+        formData.append('restaurantId', dishData.restaurantId.toString());
+        console.log('Adding restaurantId to FormData for update:', dishData.restaurantId);
+      }
       
       // Add image if it exists and is a file object
       if (dishData.thumbnail && typeof dishData.thumbnail === 'object' && dishData.thumbnail.uri) {

@@ -40,6 +40,7 @@ import EditFoodScreen from '../screens/food/EditFoodScreen';
 import NotificationScreen from '../screens/restaurant/NotificationScreen';
 import ChefProfileScreen from '../screens/restaurant/ProfileScreen';
 import RestaurantInfoScreen from '../screens/restaurant/RestaurantInfoScreen';
+import EditRestaurantScreen from '../screens/restaurant/EditRestaurantScreen';
 import PendingOrdersScreen from '../screens/restaurant/PendingOrdersScreen';
 
 import EditCart from '../components/cart/EditCart.js'; // Đảm bảo bạn có file EditCart.js đúng chuẩn React Native hoặc React
@@ -175,6 +176,7 @@ const AppNavigator = () => {
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
         <Stack.Screen name="RestaurantInfo" component={RestaurantInfoScreen} />
         <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+        <Stack.Screen name="EditRestaurantScreen" component={EditRestaurantScreen} />
         <Stack.Screen name="PendingOrdersScreen" component={PendingOrdersScreen} />
       </Stack.Navigator>
     </NavigationContainer>
@@ -266,7 +268,7 @@ const RestaurantTabNavigator = () => {
               fontSize: 12, 
               marginTop: -8 
             }}>
-              Add
+              Thêm
             </Text>
           ),
         }}

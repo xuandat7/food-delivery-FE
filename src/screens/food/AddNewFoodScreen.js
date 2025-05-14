@@ -40,6 +40,7 @@ const AddNewFoodScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [restaurantId, setRestaurantId] = useState(null);
   
   // Keyboard states
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -147,6 +148,12 @@ const AddNewFoodScreen = () => {
       const profileResponse = await restaurantAPI.getProfile();
       
       if (profileResponse.success && profileResponse.data) {
+        // Lấy restaurant ID từ profile và lưu lại
+        if (profileResponse.data.id) {
+          setRestaurantId(profileResponse.data.id);
+          console.log('Restaurant ID:', profileResponse.data.id);
+        }
+        
         // Tạo danh sách categories từ dishes trong profile
         const uniqueCategories = new Set();
         
@@ -278,6 +285,11 @@ const AddNewFoodScreen = () => {
       return;
     }
     
+    if (!restaurantId) {
+      Alert.alert('Lỗi', 'Không thể xác định nhà hàng của bạn. Vui lòng thử lại sau.');
+      return;
+    }
+    
     try {
       setLoading(true);
       
@@ -287,8 +299,11 @@ const AddNewFoodScreen = () => {
         price: parseFloat(price),
         description: details,
         category: selectedCategory,
-        image: image
+        image: image,
+        restaurantId: restaurantId // Thêm restaurantId vào dữ liệu gửi lên
       };
+      
+      console.log('Sending dish data with restaurantId:', restaurantId);
       
       // If editing, add ID to request
       if (isEditing && editingFood) {
@@ -304,7 +319,7 @@ const AddNewFoodScreen = () => {
         Alert.alert(
           isEditing ? 'Thành công' : 'Thành công', 
           isEditing ? 'Cập nhật món ăn thành công' : 'Thêm món ăn mới thành công', 
-          [{ text: 'OK', onPress: () => navigation.navigate('MyFood') }]
+          [{ text: 'OK', onPress: () => navigation.navigate('RestaurantTabs', { screen: 'MyFood' }) }]
         );
       } else {
         Alert.alert('Lỗi', response.message || (isEditing ? 'Không thể cập nhật món ăn' : 'Không thể thêm món ăn'));

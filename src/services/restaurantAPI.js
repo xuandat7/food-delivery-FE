@@ -587,6 +587,26 @@ const restaurantAPI = {
   },
 
   /**
+   * Get public restaurant profile by ID
+   * @param {number|string} restaurantId
+   * @returns {Promise} - API response
+   */
+  getPublicProfileById: async (restaurantId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/restaurants/public/${restaurantId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to fetch public restaurant info');
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching public restaurant info:', error);
+      return handleError(error);
+    }
+  },
+
+  /**
    * Update an existing dish
    * @param {number} dishId - ID of the dish to update
    * @param {Object} dishData - Updated dish data
@@ -697,7 +717,149 @@ const restaurantAPI = {
       console.error('Delete dish error:', error);
       return handleError(error);
     }
+  },
+
+  /**
+   * Update restaurant profile
+   * @param {Object} data - Restaurant info to update (expects: id, name, email, phone, address, description, image/avatar)
+   * @returns {Promise} - API response
+   */
+  updateProfile: async (data) => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      if (!token) {
+        return { success: false, message: 'Bạn chưa đăng nhập!', data: null };
+      }
+      if (!data.id) {
+        return { success: false, message: 'Thiếu ID nhà hàng!', data: null };
+      }
+      // Use FormData for PATCH with image
+      const formData = new FormData();
+      if (data.name) formData.append('name', data.name);
+      if (data.email) formData.append('email', data.email);
+      if (data.phone) formData.append('phone', data.phone);
+      if (data.address) formData.append('address', data.address);
+      if (data.description) formData.append('description', data.description);
+      // Accept both avatar and image fields for compatibility
+      if (data.avatar && data.avatar.uri) {
+        const uri = data.avatar.uri;
+        const name = uri.split('/').pop() || 'avatar.jpg';
+        const type = data.avatar.type || 'image/jpeg';
+        formData.append('image', { uri, name, type });
+      } else if (data.image && data.image.uri) {
+        const uri = data.image.uri;
+        const name = uri.split('/').pop() || 'avatar.jpg';
+        const type = data.image.type || 'image/jpeg';
+        formData.append('image', { uri, name, type });
+      }
+      const response = await fetch(`${BASE_URL}/restaurants/${data.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Do not set Content-Type when using FormData
+        },
+        body: formData
+      });
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.message || 'Cập nhật thông tin nhà hàng thất bại');
+      return { success: true, message: 'Cập nhật thông tin nhà hàng thành công', data: resData };
+    } catch (error) {
+      console.error('Update restaurant profile error:', error);
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Get orders for the current restaurant
+   * @param {number} page - Page number (default 0)
+   * @param {number} limit - Results per page (default 10)
+   * @returns {Promise} - API response
+   */
+  getRestaurantOrders: async (page = 0, limit = 10) => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      if (!token) {
+        return { success: false, message: 'Bạn chưa đăng nhập!', data: null };
+      }
+      const response = await fetch(`${BASE_URL}/orders/restaurant-orders?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Không thể lấy danh sách đơn hàng');
+      return { success: true, data };
+    } catch (error) {
+      console.error('Get restaurant orders error:', error);
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Cập nhật trạng thái đơn hàng
+   * @param {number} orderId - ID của đơn hàng
+   * @param {string} status - Trạng thái mới (ví dụ: 'completed', 'processing', ...)
+   * @returns {Promise} - API response
+   */
+  updateOrderStatus: async (orderId, status) => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      if (!token) {
+        return { success: false, message: 'Bạn chưa đăng nhập!', data: null };
+      }
+      const response = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Không thể cập nhật trạng thái đơn hàng');
+      return { success: true, data };
+    } catch (error) {
+      console.error('Update order status error:', error);
+      return handleError(error);
+    }
+  },
+
+  /**
+   * Get total revenue for restaurant
+   * @returns {Promise} - API response
+   */
+  getTotalRevenue: async () => {
+    try {
+      const token = await AsyncStorage.getItem('token') || '';
+      
+      if (!token) {
+        console.error('No token available for total revenue request');
+        return { 
+          success: false, 
+          message: 'Bạn chưa đăng nhập!', 
+          data: { totalRevenue: 0 }
+        };
+      }
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 giây timeout
+      
+      const response = await fetch(`${BASE_URL}/statistics/total-revenue`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return handleError(error, 'Failed to fetch total revenue');
+    }
   }
 };
 
-export default restaurantAPI; 
+export default restaurantAPI;

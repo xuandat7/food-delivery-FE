@@ -39,6 +39,8 @@ import AddNewFoodScreen from '../screens/food/AddNewFoodScreen';
 import EditFoodScreen from '../screens/food/EditFoodScreen';
 import NotificationScreen from '../screens/restaurant/NotificationScreen';
 import ChefProfileScreen from '../screens/restaurant/ProfileScreen';
+import RestaurantInfoScreen from '../screens/restaurant/RestaurantInfoScreen';
+import PendingOrdersScreen from '../screens/restaurant/PendingOrdersScreen';
 
 import EditCart from '../components/cart/EditCart.js'; // Đảm bảo bạn có file EditCart.js đúng chuẩn React Native hoặc React
 import PaymentMethodScreen from '../components/payment/PaymentMethodScreen.js';
@@ -171,6 +173,9 @@ const AppNavigator = () => {
         <Stack.Screen name="EditCart" component={EditCart} />
         <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
+        <Stack.Screen name="RestaurantInfo" component={RestaurantInfoScreen} />
+        <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+        <Stack.Screen name="PendingOrdersScreen" component={PendingOrdersScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -268,13 +273,13 @@ const RestaurantTabNavigator = () => {
       />
       
       <Tab.Screen 
-        name="Notifications" 
-        component={NotificationScreen}
+        name="Đơn hàng" 
+        component={PendingOrdersScreen}
         options={{
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={22} color={color} />
           ),
-          tabBarLabel: 'Alert',
+          tabBarLabel: 'Đơn hàng',
         }}
       />
       
@@ -285,7 +290,7 @@ const RestaurantTabNavigator = () => {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
           ),
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Cá nhân',
         }}
       />
     </Tab.Navigator>

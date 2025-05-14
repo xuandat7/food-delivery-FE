@@ -92,8 +92,7 @@ const SellerDashboard = () => {
   };
 
   const handleToggleOrderRequests = () => {
-    // Implement order requests modal when created
-    console.log('Toggle order requests');
+    // navigation.navigate('PendingOrdersScreen');
   };
 
   return (

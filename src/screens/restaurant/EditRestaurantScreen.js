@@ -20,33 +20,34 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
-import { userAPI, AsyncStorage } from '../../services';
-import restaurantAPI from '../../services/restaurantAPI';
+import { restaurantAPI } from '../../services';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const EditProfileScreen = () => {
+const EditRestaurantScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  // Ưu tiên info (restaurant), fallback userData (user)
   const info = route.params?.info || {};
-  const userData = route.params?.userData || {};
-  // Nếu là nhà hàng thì lấy info, nếu là user thì lấy userData
-  const [name, setName] = useState(info.name || userData.full_name || userData.fullName || '');
-  const [email, setEmail] = useState(info.email || userData.email || userData.account?.email || '');
-  const [phone, setPhone] = useState(info.phone || userData.phone || '');
-  const [address, setAddress] = useState(info.address || userData.address || '');
-  const [description, setDescription] = useState(info.description || userData.description || '');
+  
+  const [name, setName] = useState(info.name || '');
+  const [email, setEmail] = useState(info.email || '');
+  const [phone, setPhone] = useState(info.phone || '');
+  const [address, setAddress] = useState(info.address || '');
+  const [description, setDescription] = useState(info.description || '');
+  const [type, setType] = useState(info.type || '');
   const [avatar, setAvatar] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   // Keyboard states
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   
   // Input refs
-  const fullNameRef = useRef(null);
+  const nameRef = useRef(null);
   const emailRef = useRef(null);
   const phoneRef = useRef(null);
   const addressRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const typeRef = useRef(null);
   const scrollViewRef = useRef(null);
   
   // Keyboard listeners to adjust scroll
@@ -76,28 +77,19 @@ const EditProfileScreen = () => {
   const handleInputFocus = (fieldRef) => {
     if (!fieldRef?.current) return;
     
-    // Đảm bảo mã này chỉ chạy sau khi component đã render
     setTimeout(() => {
       const nodeHandle = findNodeHandle(fieldRef.current);
       if (!nodeHandle) return;
       
-      // Tính toán vị trí của ô nhập
       UIManager.measure(nodeHandle, (x, y, width, height, pageX, pageY) => {
-        // Tính toán vị trí của đáy ô nhập
         const inputBottom = pageY + height;
-        
-        // Tính toán vị trí đỉnh của bàn phím
         const screenHeight = Dimensions.get('window').height;
         const keyboardTop = screenHeight - keyboardHeight;
-        
-        // Thêm khoảng cách để dễ nhìn
         const paddingForVisibility = 20;
         
-        // Chỉ cuộn nếu ô nhập bị che bởi bàn phím
         if (inputBottom + paddingForVisibility > keyboardTop) {
-          // Cuộn chính xác đến vị trí của ô nhập liệu
           scrollViewRef.current?.scrollTo({ 
-            y: pageY - 100, // Cuộn ô nhập lên vị trí cách đỉnh màn hình 100px
+            y: pageY - 100,
             animated: true 
           });
         }
@@ -105,13 +97,13 @@ const EditProfileScreen = () => {
     }, 100);
   };
 
-  // Xin quyền truy cập thư viện ảnh khi component được mount
+  // Xin quyền truy cập thư viện ảnh
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh để thay đổi ảnh đại diện.');
+          Alert.alert('Thông báo', 'Cần quyền truy cập thư viện ảnh để thay đổi ảnh nhà hàng.');
         }
       }
     })();
@@ -123,12 +115,9 @@ const EditProfileScreen = () => {
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [1, 1],
+        aspect: [4, 3],
         quality: 0.7,
       });
-
-      // Ghi log cấu trúc dữ liệu trả về từ image picker để debug
-      console.log('ImagePicker result structure:', JSON.stringify(result));
 
       if (!result.canceled) {
         console.log('Selected asset:', JSON.stringify(result.assets[0]));
@@ -141,90 +130,66 @@ const EditProfileScreen = () => {
   };
 
   const handleSave = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Chuẩn bị dữ liệu người dùng cần cập nhật - sử dụng full_name theo yêu cầu API
-      const updatedData = {
-        full_name: fullName, // Sử dụng full_name thay vì fullName
-        phone: phone,
-        address: address
-      };
-      
-      // Thêm avatar nếu đã chọn ảnh mới
-      if (avatar) {
-        updatedData.avatar = {
-          uri: avatar.uri,
-          type: avatar.type || 'image/jpeg',
-          name: 'avatar.jpg'
-        };
-      }
-      
-      console.log('Sending update with data:', updatedData);
-      
-      // Gọi API cập nhật thông tin người dùng
-      const response = await userAPI.updateProfile(userData.id, updatedData);
-      
-      if (response.success) {
-        Alert.alert('Thành công', 'Thông tin hồ sơ đã được cập nhật');
-        
-        // Chuẩn bị dữ liệu đã cập nhật để trở về màn hình trước
-        // Đảm bảo dữ liệu trả về từ API được xử lý đúng
-        const updatedUserData = {
-          ...userData,
-          ...response.data,
-          // Sau khi xem code backend, đảm bảo dữ liệu hiển thị đúng
-          // Backend trả về full_name từ trường fullName trong entity
-          full_name: response.data.full_name || fullName
-        };
-        
-        console.log('Updated user data after API response:', updatedUserData);
-        
-        // Sử dụng replace thay vì navigate để thay thế hoàn toàn màn hình hiện tại
-        // Điều này sẽ loại bỏ EditProfileScreen khỏi stack điều hướng
-        navigation.replace('PersonalInfo', { 
-          userData: updatedUserData,
-          refresh: true 
-        });
-      } else {
-        Alert.alert('Lỗi', response.message || 'Không thể cập nhật thông tin hồ sơ');
-      }
-    } catch (error) {
-      console.error('Update profile error:', error);
-      Alert.alert('Lỗi', 'Đã xảy ra lỗi khi cập nhật thông tin hồ sơ');
-    } finally {
-      setIsLoading(false);
+    if (!name) {
+      Alert.alert('Lỗi', 'Vui lòng nhập tên nhà hàng');
+      return;
     }
-  };
 
-  const handleSaveRestaurant = async () => {
     setLoading(true);
     try {
-      // Build update data for restaurant (do NOT include email)
+      // Chuẩn bị dữ liệu cần cập nhật
       const updateData = {
         id: info.id,
         name,
         phone,
         address,
-        description
+        description,
+        type
       };
-      // Attach avatar/image if selected
+      
+      console.log('Restaurant data before update:', updateData);
+      
+      // Thêm ảnh nếu đã chọn ảnh mới
       if (avatar && avatar.uri) {
-        updateData.avatar = {
+        console.log('Adding new image to update data');
+        updateData.image = {
           uri: avatar.uri,
           type: avatar.type || 'image/jpeg',
-          name: avatar.fileName || avatar.uri.split('/').pop() || 'avatar.jpg',
+          name: avatar.fileName || avatar.uri.split('/').pop() || 'restaurant_image.jpg',
         };
       }
+      
+      // In ra FormData để debug
+      console.log('Sending update request to API with data:', JSON.stringify(updateData));
+      
       const res = await restaurantAPI.updateProfile(updateData);
+      console.log('API response:', res);
+      
       if (res.success) {
-        Alert.alert('Thành công', 'Cập nhật thông tin thành công!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
+        // Cập nhật lại thông tin nhà hàng trong AsyncStorage
+        try {
+          const profileData = await AsyncStorage.getItem('restaurantProfile');
+          if (profileData) {
+            const parsedData = JSON.parse(profileData);
+            const updatedProfile = { ...parsedData, ...updateData };
+            await AsyncStorage.setItem('restaurantProfile', JSON.stringify(updatedProfile));
+            console.log('Updated restaurant profile in AsyncStorage');
+          }
+        } catch (e) {
+          console.error('Error updating AsyncStorage:', e);
+        }
+        
+        Alert.alert('Thành công', 'Cập nhật thông tin nhà hàng thành công!', [
+          { text: 'OK', onPress: () => {
+            // Quay lại và refresh màn hình thông tin
+            navigation.navigate('RestaurantInfo', { refresh: true });
+          }}
         ]);
       } else {
         Alert.alert('Lỗi', res.message || 'Cập nhật thất bại!');
       }
     } catch (e) {
+      console.error('Error updating restaurant:', e);
       Alert.alert('Lỗi', e.message || 'Cập nhật thất bại!');
     } finally {
       setLoading(false);
@@ -251,15 +216,15 @@ const EditProfileScreen = () => {
           >
             <Ionicons name="chevron-back" size={20} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>Chỉnh sửa hồ sơ</Text>
+          <Text style={styles.title}>Chỉnh sửa thông tin nhà hàng</Text>
         </View>
 
-        {/* Profile Image */}
+        {/* Restaurant Image */}
         <View style={styles.profileImageContainer}>
           {avatar ? (
             <Image source={{ uri: avatar.uri }} style={styles.profileImage} />
-          ) : userData.avatar ? (
-            <Image source={{ uri: userData.avatar }} style={styles.profileImage} />
+          ) : info.image_url ? (
+            <Image source={{ uri: info.image_url }} style={styles.profileImage} />
           ) : (
             <View style={styles.profileImage} />
           )}
@@ -270,17 +235,17 @@ const EditProfileScreen = () => {
 
         {/* Form Fields */}
         <View style={styles.formField}>
-          <Text style={styles.label}>HỌ VÀ TÊN</Text>
+          <Text style={styles.label}>TÊN NHÀ HÀNG</Text>
           <TextInput
             style={[styles.input, styles.editableInput]}
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Nhập họ và tên của bạn"
+            value={name}
+            onChangeText={setName}
+            placeholder="Nhập tên nhà hàng"
             placeholderTextColor="#000000"
-            ref={fullNameRef}
+            ref={nameRef}
             returnKeyType="next"
             onSubmitEditing={() => phoneRef.current?.focus()}
-            onFocus={() => handleInputFocus(fullNameRef)}
+            onFocus={() => handleInputFocus(nameRef)}
           />
         </View>
 
@@ -289,10 +254,8 @@ const EditProfileScreen = () => {
           <TextInput
             style={[styles.input, styles.nonEditableInput]}
             value={email}
-            onChangeText={setEmail}
-            placeholder="Nhập email của bạn"
+            placeholder="Email không thể thay đổi"
             placeholderTextColor="#6B6E82"
-            keyboardType="email-address"
             editable={false}
             ref={emailRef}
           />
@@ -304,7 +267,7 @@ const EditProfileScreen = () => {
             style={[styles.input, styles.editableInput]}
             value={phone}
             onChangeText={setPhone}
-            placeholder="Nhập số điện thoại của bạn"
+            placeholder="Nhập số điện thoại"
             placeholderTextColor="#000000"
             keyboardType="phone-pad"
             ref={phoneRef}
@@ -320,23 +283,55 @@ const EditProfileScreen = () => {
             style={[styles.input, styles.editableInput]}
             value={address}
             onChangeText={setAddress}
-            placeholder="Nhập địa chỉ của bạn"
+            placeholder="Nhập địa chỉ nhà hàng"
             placeholderTextColor="#000000"
             ref={addressRef}
+            returnKeyType="next"
+            onSubmitEditing={() => typeRef.current?.focus()}
             onFocus={() => handleInputFocus(addressRef)}
+          />
+        </View>
+
+        <View style={styles.formField}>
+          <Text style={styles.label}>LOẠI NHÀ HÀNG</Text>
+          <TextInput
+            style={[styles.input, styles.editableInput]}
+            value={type}
+            onChangeText={setType}
+            placeholder="Nhập loại nhà hàng (Á, Âu, Việt Nam,...)"
+            placeholderTextColor="#000000"
+            ref={typeRef}
+            returnKeyType="next"
+            onSubmitEditing={() => descriptionRef.current?.focus()}
+            onFocus={() => handleInputFocus(typeRef)}
+          />
+        </View>
+
+        <View style={styles.formField}>
+          <Text style={styles.label}>MÔ TẢ</Text>
+          <TextInput
+            style={[styles.input, styles.multilineInput, styles.editableInput]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Nhập mô tả về nhà hàng"
+            placeholderTextColor="#000000"
+            multiline={true}
+            numberOfLines={4}
+            ref={descriptionRef}
+            onFocus={() => handleInputFocus(descriptionRef)}
           />
         </View>
 
         {/* Save Button */}
         <TouchableOpacity
           style={styles.saveButton}
-          onPress={handleSaveRestaurant}
+          onPress={handleSave}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
           ) : (
-            <Text style={styles.saveButtonText}>LƯU</Text>
+            <Text style={styles.saveButtonText}>LƯU THAY ĐỔI</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -379,16 +374,16 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   profileImage: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
+    width: 150,
+    height: 120,
+    borderRadius: 15,
     backgroundColor: '#FFCDB6',
   },
   editIconButton: {
     width: 41,
     height: 41,
     borderRadius: 20.5,
-    backgroundColor: '#FF7621',
+    backgroundColor: '#FB6D3A',
     position: 'absolute',
     bottom: 0,
     right: 0,
@@ -403,6 +398,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#32343E',
     marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
     height: 60,
@@ -412,9 +408,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B6E82',
   },
+  multilineInput: {
+    height: 120,
+    paddingTop: 15,
+    textAlignVertical: 'top',
+  },
   editableInput: {
     borderWidth: 1,
-    borderColor: '#FF7621',
+    borderColor: '#FB6D3A',
     color: '#000000',
   },
   nonEditableInput: {
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     height: 56,
-    backgroundColor: '#FF7621',
+    backgroundColor: '#FB6D3A',
     borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
@@ -440,4 +441,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditProfileScreen;
+export default EditRestaurantScreen; 

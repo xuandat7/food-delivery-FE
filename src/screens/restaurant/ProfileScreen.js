@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -15,13 +15,35 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import WithdrawSuccessScreen from './WithdrawSuccessScreen';
-import { authAPI, AsyncStorage } from '../../services';
+import { authAPI, restaurantAPI, AsyncStorage } from '../../services';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
-  const [balance, setBalance] = useState(500); // Initialize with $500
+  const [balance, setBalance] = useState(0);
   const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Lấy dữ liệu doanh thu
+  useEffect(() => {
+    const fetchTotalRevenue = async () => {
+      try {
+        setLoading(true);
+        const response = await restaurantAPI.getTotalRevenue();
+        if (response.success && response.data) {
+          setBalance(response.data.totalRevenue || 0);
+        } else {
+          console.error('Failed to fetch revenue:', response.message);
+        }
+      } catch (error) {
+        console.error('Error fetching revenue:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTotalRevenue();
+  }, []);
   
   const handleBack = () => {
     navigation.goBack();
@@ -37,8 +59,8 @@ const ProfileScreen = () => {
     setBalance(0);
   };
 
-  const handlePersonalInfo = () => {
-    navigation.navigate('PersonalInfo');
+  const handlePersonalInfo = async () => {
+    navigation.navigate('RestaurantInfo');
   };
 
   const handleSettings = () => {
@@ -109,21 +131,23 @@ const ProfileScreen = () => {
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Profile</Text>
-        </View>
-
-        <Text style={styles.balanceLabel}>Available Balance</Text>
-        <Text style={styles.balanceAmount}>${balance.toFixed(2)}</Text>
+        </View>        <Text style={styles.balanceLabel}>Doanh thu hiện có</Text>
+        {loading ? (
+          <ActivityIndicator size="large" color="#FFFFFF" style={{ marginVertical: 10 }} />
+        ) : (
+          <Text style={styles.balanceAmount}>{balance.toLocaleString('vi-VN')} đ</Text>
+        )}
 
         <TouchableOpacity 
           style={styles.withdrawButton} 
           onPress={handleWithdraw}
-          disabled={balance === 0}
+          disabled={balance === 0 || loading}
         >
           <Text style={[
             styles.withdrawText, 
-            balance === 0 && styles.disabledText
+            (balance === 0 || loading) && styles.disabledText
           ]}>
-            Withdraw
+            Reset
           </Text>
         </TouchableOpacity>
       </View>

@@ -26,7 +26,7 @@ const RestaurantInfoScreen = () => {
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#FB6D3A" />
+        <ActivityIndicator size="large" color="#3498db" />
       </View>
     );
   }
@@ -79,7 +79,7 @@ function InfoRow({ label, value, icon }) {
   return (
     <View style={styles.infoRow}>
       <View style={styles.infoIconPlaceholder}>
-        <Ionicons name={icon} size={20} color="#FB6D3A" />
+        <Ionicons name={icon} size={20} color="#3498db" />
       </View>
       <View style={styles.infoTextGroup}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editText: {
-    color: '#FB6D3A',
+    color: '#3498db',
     fontSize: 14,
     fontWeight: '400',
     textDecorationLine: 'underline',

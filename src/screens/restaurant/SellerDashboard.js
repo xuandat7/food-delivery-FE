@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,8 @@ import {
   Image, 
   TouchableOpacity, 
   StatusBar,
-  Alert 
+  Alert,
+  AppState,
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
@@ -18,6 +19,11 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Feather from 'react-native-vector-icons/Feather';
 import RunningOrdersScreen from './RunningOrdersScreen';
 import { AsyncStorage, restaurantAPI } from '../../services';
+import { 
+  registerForPushNotificationsAsync, 
+  setupNotificationListeners,
+  notifyNewOrder
+} from '../../services/notifications';
 
 // Custom Chart Component (simplified for this implementation)
 const RevenueChart = () => {
@@ -65,84 +71,195 @@ const SellerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [runningOrders, setRunningOrders] = useState(0);
   const [pendingOrders, setPendingOrders] = useState(0);
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [isFirstCheck, setIsFirstCheck] = useState(true);
   
-  // Fetch restaurant info
+  const appState = useRef(AppState.currentState);
+  const notificationListenerRef = useRef(null);
+  
+  // Đăng ký push notifications khi component mount
   useEffect(() => {
-    const fetchRestaurantInfo = async () => {
-      try {
-        setIsLoading(true);
-        // Check if token exists
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-          console.log('No token found, redirecting to login');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Auth' }],
-          });
-          return;
+    registerForPushNotificationsAsync();
+    
+    // Thiết lập listeners để xử lý thông báo
+    notificationListenerRef.current = setupNotificationListeners(
+      // Khi nhận được thông báo
+      notification => {
+        console.log('Thông báo nhận được:', notification);
+      },
+      // Khi người dùng tương tác với thông báo
+      response => {
+        console.log('Người dùng tương tác với thông báo:', response);
+        const data = response.notification.request.content.data;
+        
+        // Nếu là thông báo đơn hàng mới, mở tab Đơn hàng
+        if (data.type === 'new_order') {
+          navigation.navigate('Đơn hàng');
         }
-        
-        // Lấy thông tin từ server
-        const response = await restaurantAPI.getProfile();
-        
-        if (response.success) {
-          setRestaurantInfo(response.data);
-          console.log('Restaurant info loaded:', response.data.name || response.data.restaurant_name);
-          // Hiển thị thông báo nếu đang dùng dữ liệu offline
-          if (response.isOffline) {
-            Alert.alert(
-              'Chế độ Offline', 
-              'Không thể kết nối tới máy chủ. Ứng dụng đang hiển thị dữ liệu đã lưu trước đó hoặc dữ liệu mẫu.',
-              [{ text: 'Đã hiểu', style: 'default' }]
-            );
-          }
-          // Lấy số lượng đơn hàng running và pending từ API
-          try {
-            const ordersRes = await restaurantAPI.getRestaurantOrders(0, 50);
-            if (ordersRes.success && Array.isArray(ordersRes.data.content)) {
-              const running = ordersRes.data.content.filter(o => o.status === 'processing' || o.status === 'confirmed').length;
-              const pending = ordersRes.data.content.filter(o => o.status === 'pending').length;
-              setRunningOrders(running);
-              setPendingOrders(pending);
-            } else {
-              setRunningOrders(0);
-              setPendingOrders(0);
-            }
-          } catch (err) {
+      }
+    );
+    
+    // Theo dõi trạng thái của ứng dụng (foreground/background)
+    const appStateSubscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Ứng dụng quay lại foreground, cập nhật dữ liệu
+        fetchRestaurantInfo();
+      }
+      
+      appState.current = nextAppState;
+    });
+    
+    return () => {
+      // Dọn dẹp listeners khi unmount
+      if (notificationListenerRef.current) {
+        notificationListenerRef.current.remove();
+      }
+      appStateSubscription.remove();
+    };
+  }, []);
+
+  // Fetch restaurant info
+  const fetchRestaurantInfo = async () => {
+    try {
+      setIsLoading(true);
+      // Check if token exists
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, redirecting to login');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
+        return;
+      }
+      
+      // Lấy thông tin từ server
+      const response = await restaurantAPI.getProfile();
+      
+      if (response.success) {
+        setRestaurantInfo(response.data);
+        console.log('Restaurant info loaded:', response.data.name || response.data.restaurant_name);
+        // Hiển thị thông báo nếu đang dùng dữ liệu offline
+        if (response.isOffline) {
+          Alert.alert(
+            'Chế độ Offline', 
+            'Không thể kết nối tới máy chủ. Ứng dụng đang hiển thị dữ liệu đã lưu trước đó hoặc dữ liệu mẫu.',
+            [{ text: 'Đã hiểu', style: 'default' }]
+          );
+        }
+        // Lấy số lượng đơn hàng running và pending từ API
+        try {
+          const ordersRes = await restaurantAPI.getRestaurantOrders(0, 50);
+          if (ordersRes.success && Array.isArray(ordersRes.data.content)) {
+            const running = ordersRes.data.content.filter(o => o.status === 'processing' || o.status === 'confirmed').length;
+            const pending = ordersRes.data.content.filter(o => o.status === 'pending').length;
+            setRunningOrders(running);
+            setPendingOrders(pending);
+          } else {
             setRunningOrders(0);
             setPendingOrders(0);
           }
-        } else {
-          // Nếu API không thành công, thử lấy từ AsyncStorage
-          const userString = await AsyncStorage.getItem('user');
-          if (userString) {
-            const user = JSON.parse(userString);
-            setRestaurantInfo(user);
-            console.log('Restaurant info loaded from storage:', user);
-          } else {
-            throw new Error('Không thể tải thông tin nhà hàng');
-          }
+        } catch (err) {
+          setRunningOrders(0);
+          setPendingOrders(0);
         }
-        
-      } catch (error) {
-        console.error('Error fetching restaurant info:', error);
-        Alert.alert('Lỗi', 'Không thể tải thông tin nhà hàng. Vui lòng kiểm tra kết nối mạng và thử lại.');
-      } finally {
-        setIsLoading(false);
+      } else {
+        // Nếu API không thành công, thử lấy từ AsyncStorage
+        const userString = await AsyncStorage.getItem('user');
+        if (userString) {
+          const user = JSON.parse(userString);
+          setRestaurantInfo(user);
+          console.log('Restaurant info loaded from storage:', user);
+        } else {
+          throw new Error('Không thể tải thông tin nhà hàng');
+        }
       }
-    };
-    
+      
+    } catch (error) {
+      console.error('Error fetching restaurant info:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin nhà hàng. Vui lòng kiểm tra kết nối mạng và thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     if (isFocused) {
       fetchRestaurantInfo();
     }
   }, [isFocused]);
+
+  // Kiểm tra đơn hàng mới mỗi 2 giây
+  useEffect(() => {
+    let intervalId;
+    
+    const checkForNewOrders = async () => {
+      try {
+        console.log('Kiểm tra đơn hàng mới...');
+        const ordersRes = await restaurantAPI.getRestaurantOrders(0, 50);
+        if (ordersRes.success && Array.isArray(ordersRes.data.content)) {
+          const pendingOrdersCount = ordersRes.data.content.filter(o => o.status === 'pending').length;
+          console.log(`Đơn hàng đang chờ: ${pendingOrdersCount}, Lần trước: ${lastOrderCount}`);
+          
+          // Nếu không phải lần kiểm tra đầu tiên và số đơn hàng đã tăng
+          if (!isFirstCheck && pendingOrdersCount > lastOrderCount) {
+            const newOrdersCount = pendingOrdersCount - lastOrderCount;
+            
+            // Hiển thị thông báo trong ứng dụng
+            Alert.alert(
+              'Đơn hàng mới!',
+              `Bạn có ${newOrdersCount} đơn hàng mới đang chờ xác nhận`,
+              [
+                {
+                  text: 'Xem ngay',
+                  onPress: () => navigation.navigate('Đơn hàng')
+                },
+                {
+                  text: 'Để sau',
+                  style: 'cancel'
+                }
+              ],
+              { cancelable: true }
+            );
+            
+            // Hiển thị thông báo trên thiết bị
+            notifyNewOrder(newOrdersCount);
+          }
+          
+          // Cập nhật trạng thái
+          setPendingOrders(pendingOrdersCount);
+          setLastOrderCount(pendingOrdersCount);
+          setIsFirstCheck(false);
+        }
+      } catch (err) {
+        console.error('Lỗi kiểm tra đơn hàng mới:', err);
+      }
+    };
+    
+    // Nếu đang ở màn hình dashboard, bắt đầu kiểm tra định kỳ
+    if (isFocused) {
+      // Kiểm tra ngay lập tức
+      checkForNewOrders();
+      
+      // Thiết lập kiểm tra định kỳ
+      intervalId = setInterval(checkForNewOrders, 2000); // 2 giây
+    }
+    
+    return () => {
+      // Dọn dẹp interval khi unmount hoặc mất focus
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isFocused, lastOrderCount, isFirstCheck, navigation]);
   
   const handleToggleRunningOrders = () => {
     setShowRunningOrders(!showRunningOrders);
   };
   
   const handleToggleOrderRequests = () => {
-    // navigation.navigate('PendingOrdersScreen');
+    // Chuyển đến tab Đơn hàng trong Bottom Tab Navigator
+    navigation.navigate('Đơn hàng');
   };
 
   return (

@@ -12,20 +12,10 @@ const profileData = {
 };
 
 const menuItems = [
-  {
-    section: [
-      { label: 'Personal Info', icon: 'person-outline' },
-      { label: 'Addresses', icon: 'location-outline' },
-    ],
-  },
-  {
-    section: [
-      { label: 'Cart', icon: 'cart-outline' },
-      { label: 'Favourite', icon: 'heart-outline' },
-      { label: 'Notifications', icon: 'notifications-outline' },
-      { label: 'Payment Method', icon: 'card-outline' },
-    ],
-  },
+  { label: 'Thông tin cá nhân', icon: 'person-outline', screen: 'PersonalInfo' },
+  { label: 'Giỏ hàng', icon: 'cart-outline', screen: 'EditCart' },
+  { label: 'Phương thức thanh toán', icon: 'card-outline', screen: 'PaymentMethod' },
+  { label: 'Đơn hàng của tôi', icon: 'list-outline', screen: 'MyOrdersScreen' },
 ];
 
 export default function MenuScreen() {
@@ -47,11 +37,11 @@ export default function MenuScreen() {
         setUserData(response.data);
       } else {
         setError(response.message);
-        Alert.alert('Error', response.message || 'Failed to load profile');
+        Alert.alert('Lỗi', response.message || 'Không thể tải thông tin hồ sơ');
       }
     } catch (err) {
       setError(err.message);
-      Alert.alert('Error', err.message || 'Something went wrong');
+      Alert.alert('Lỗi', err.message || 'Đã xảy ra sự cố');
     } finally {
       setLoading(false);
     }
@@ -156,46 +146,22 @@ export default function MenuScreen() {
       {/* Menu sections */}
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.menuSection}>
-          {/* Section 1 */}
+          {/* Tất cả các mục menu trong cùng một khối */}
           <View style={styles.menuGroup}>
-            <MenuItem 
-              label={menuItems[0].section[0].label} 
-              icon={menuItems[0].section[0].icon}
-              onPress={() => navigation.navigate('PersonalInfo', { userData })} 
-            />
-            <MenuItem 
-              label={menuItems[0].section[1].label} 
-              icon={menuItems[0].section[1].icon}
-              onPress={() => navigation.navigate('AddressesScreen')}
-            />
-          </View>
-          {/* Section 2 */}
-          <View style={styles.menuGroup}>
-            <MenuItem 
-              label={menuItems[1].section[0].label} 
-              icon={menuItems[1].section[0].icon}
-              onPress={() => navigation.navigate('EditCart')}
-            />
-            <MenuItem 
-              label={menuItems[1].section[1].label} 
-              icon={menuItems[1].section[1].icon}
-              onPress={() => navigation.navigate('FavouriteScreen')}
-            />
-            <MenuItem 
-              label={menuItems[1].section[2].label} 
-              icon={menuItems[1].section[2].icon}
-              onPress={() => navigation.navigate('NotificationScreen')}
-            />
-            <MenuItem 
-              label={menuItems[1].section[3].label} 
-              icon={menuItems[1].section[3].icon}
-              onPress={() => navigation.navigate('PaymentMethod')}
-            />
-            <MenuItem 
-              label="My Orders" 
-              icon="list-outline"
-              onPress={() => navigation.navigate('MyOrdersScreen')}
-            />
+            {menuItems.map((item, index) => (
+              <MenuItem 
+                key={index}
+                label={item.label} 
+                icon={item.icon}
+                onPress={() => {
+                  if (item.screen === 'PersonalInfo') {
+                    navigation.navigate(item.screen, { userData });
+                  } else {
+                    navigation.navigate(item.screen);
+                  }
+                }} 
+              />
+            ))}
           </View>
         </View>
         {/* Logout */}

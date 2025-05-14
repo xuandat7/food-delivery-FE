@@ -81,12 +81,12 @@ export default function PersonalInfoScreen(props) {
         }}>
           <Ionicons name="chevron-back" size={20} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>Personal Info</Text>
+        <Text style={styles.title}>Thông tin cá nhân</Text>
         <TouchableOpacity onPress={() => {
           // Sử dụng hàm điều hướng an toàn
           safeNavigate('EditProfile', { userData });
         }}>
-          <Text style={styles.editText}>EDIT</Text>
+          <Text style={styles.editText}>SỬA</Text>
         </TouchableOpacity>
       </View>
 
@@ -103,16 +103,16 @@ export default function PersonalInfoScreen(props) {
           )}
         </View>
         <View>
-          <Text style={styles.name}>{userData?.full_name || 'User Name'}</Text>
+          <Text style={styles.name}>{userData?.full_name || 'Tên người dùng'}</Text>
         </View>
       </View>
 
       {/* Info card */}
       <View style={styles.infoCard}>
-        <InfoRow label="FULL NAME" value={userData?.full_name || 'Not provided'} />
-        <InfoRow label="EMAIL" value={userData?.email || userData?.account?.email || 'Not provided'} />
-        <InfoRow label="PHONE NUMBER" value={userData?.phone || 'Not provided'} />
-        <InfoRow label="ADDRESS" value={userData?.address || 'Not provided'} />
+        <InfoRow label="HỌ VÀ TÊN" value={userData?.full_name || 'Chưa cung cấp'} />
+        <InfoRow label="EMAIL" value={userData?.email || userData?.account?.email || 'Chưa cung cấp'} />
+        <InfoRow label="SỐ ĐIỆN THOẠI" value={userData?.phone || 'Chưa cung cấp'} />
+        <InfoRow label="ĐỊA CHỈ" value={userData?.address || 'Chưa cung cấp'} />
       </View>
     </View>
   );
@@ -124,9 +124,9 @@ function InfoRow({ label, value }) {
   
   if (label === 'EMAIL') {
     iconName = 'mail-outline';
-  } else if (label === 'PHONE NUMBER') {
+  } else if (label === 'SỐ ĐIỆN THOẠI') {
     iconName = 'call-outline';
-  } else if (label === 'ADDRESS') {
+  } else if (label === 'ĐỊA CHỈ') {
     iconName = 'location-outline';
   }
 

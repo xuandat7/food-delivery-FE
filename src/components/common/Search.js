@@ -82,7 +82,7 @@ const Search = ({
         <Image source={dummySearch} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Tìm kiếm món ăn"
+          placeholder="Tìm kiếm"
           placeholderTextColor="#979797"
           value={searchText}
           onChangeText={setSearchText}

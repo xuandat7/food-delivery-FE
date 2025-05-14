@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  SafeAreaView, 
-  ScrollView, 
-  Image, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  SafeAreaView,
+  ScrollView,
+  Image,
+  TouchableOpacity,
   StatusBar,
-  Alert 
+  Alert
 } from 'react-native';
 import { useNavigation, useIsFocused, CommonActions } from '@react-navigation/native';
 import { styles } from './SellerDashboardStyle';
@@ -24,11 +24,11 @@ import statisticsAPI from '../../services/statisticsAPI';
 const RevenueChart = ({ data }) => {
   const maxRevenue = Math.max(...(data?.map(i => i.revenue) || [1]), 1);
   return (
-    <View style={[styles.chartContainer, {backgroundColor: '#fff', borderRadius: 12, padding: 12}]}> 
+    <View style={[styles.chartContainer, { backgroundColor: '#fff', borderRadius: 12, padding: 12 }]}>
       {/* Biểu đồ cột */}
-      <View style={{flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 90, marginBottom: 8}}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 90, marginBottom: 8 }}>
         {data && data.length > 0 && data.map((item, idx) => (
-          <View key={item.date} style={{alignItems: 'center', flex: 1.3, minWidth: 22}}>
+          <View key={item.date} style={{ alignItems: 'center', flex: 1.3, minWidth: 22 }}>
             {/* Giá trị doanh thu trên đầu cột */}
             <Text style={{
               fontSize: 9,
@@ -44,7 +44,9 @@ const RevenueChart = ({ data }) => {
               marginBottom: 2,
               opacity: item.revenue > 0 ? 1 : 0.5
             }} />
-            <Text style={{fontSize: 8, color: '#888', marginTop: 2}}>{item.date.slice(5)}</Text>
+            <Text style={{ fontSize: 8, color: '#888', marginTop: 2 }}>
+              {(typeof item.date === 'string' && item.date.length >= 5) ? item.date.slice(5) : ''}
+            </Text>
           </View>
         ))}
       </View>
@@ -109,16 +111,16 @@ const SellerDashboard = () => {
             <Text style={styles.locationText}>
               {restaurantInfo ? restaurantInfo.restaurant_name || restaurantInfo.name : 'Đang tải...'}
             </Text>
-            <Ionicons name="chevron-down-sharp" size={8} color="#676767" style={{marginLeft: 8, marginTop: 5}} />
+            <Ionicons name="chevron-down-sharp" size={8} color="#676767" style={{ marginLeft: 8, marginTop: 5 }} />
           </View>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.profileImage}
           onPress={() => navigation.navigate('ProfileScreen')}
         />
       </View>
       {isLoading ? (
-        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text>Đang tải thông tin...</Text>
         </View>
       ) : dashboard ? (
@@ -129,39 +131,44 @@ const SellerDashboard = () => {
               Xin chào, {restaurantInfo?.restaurant_name || restaurantInfo?.name || 'Nhà hàng'}!
             </Text>
             <Text style={styles.statusText}>
-              Trạng thái: <Text style={{color: '#4CAF50', fontWeight: 'bold'}}>Đang mở cửa</Text>
+              Trạng thái: <Text style={{ color: '#4CAF50', fontWeight: 'bold' }}>Đang mở cửa</Text>
             </Text>
           </View>
           {/* Running Orders and Order Requests */}
           <View style={styles.statsContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.statsCard}
               onPress={handleToggleRunningOrders}
             >
               <Text style={styles.statsNumber}>{dashboard.runningOrders}</Text>
-              <Text style={styles.statsLabel}>RUNNING ORDERS</Text>
+              <Text style={styles.statsLabel}>Đơn hàng</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.statsCard}
               onPress={handleToggleOrderRequests}
             >
               <Text style={styles.statsNumber}>{dashboard.orderRequests}</Text>
-              <Text style={styles.statsLabel}>ORDER REQUEST</Text>
+              <Text style={styles.statsLabel}>Đơn hàng mới</Text>
             </TouchableOpacity>
           </View>
           {/* Revenue Card */}
           <View className="revenueCard" style={styles.revenueCard}>
             <View style={styles.cardHeader}>
               <View>
-                <Text style={styles.cardTitle}>Total Revenue</Text>
-                {/* Tổng doanh thu ngay dưới tiêu đề */}
-                <Text style={styles.revenueAmount}>{(dashboard.revenueData?.reduce((sum, item) => sum + (item.revenue || 0), 0) || 0).toLocaleString('vi-VN')} đ</Text>
+                <Text style={styles.cardTitle}>Tổng doanh thu hôm nay</Text>
+                {/* Chỉ hiển thị doanh thu của ngày hôm nay */}
+                <Text style={styles.revenueAmount}>{(() => {
+                  const today = new Date();
+                  const todayStr = today.toISOString().slice(0, 10);
+                  const todayRevenue = dashboard.revenueData?.find(item => item.date === todayStr)?.revenue || 0;
+                  return todayRevenue.toLocaleString('vi-VN');
+                })()} đ</Text>
               </View>
               <View style={styles.headerRight}>
-                <TouchableOpacity style={styles.periodSelector} onPress={() => setTimeFilter(timeFilter === 'daily' ? 'monthly' : timeFilter === 'monthly' ? 'yearly' : 'daily')}>
-                  <Text style={styles.periodText}>{timeFilter.charAt(0).toUpperCase() + timeFilter.slice(1)}</Text>
+                <View style={styles.periodSelector}>
+                  <Text style={styles.periodText}>Ngày</Text>
                   <Ionicons name="chevron-down" size={14} color="#9B9BA5" />
-                </TouchableOpacity>
+                </View>
               </View>
             </View>
             <RevenueChart data={dashboard.revenueData} />
